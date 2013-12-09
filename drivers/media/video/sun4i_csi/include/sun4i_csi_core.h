@@ -245,12 +245,13 @@ typedef struct tag_CSI_INT_STATUS
  */
 typedef struct tag_CSI_SUBDEV_INFO
 {
-    int								 mclk;				/* the mclk frequency for sensor module in HZ unit*/
-    __csi_ref_t        vref;        /* input vref signal polarity */
-    __csi_ref_t        href;        /* input href signal polarity */
-    __csi_clk_t        clock;       /* input data valid of the input clock edge type */
-    int								 iocfg;				/*0 for csi back , 1 for csi front*/
+	int			mclk;		/* the mclk frequency for sensor module in HZ unit */
+	__csi_ref_t		vref;		/* input vref signal polarity */
+	__csi_ref_t		href;		/* input href signal polarity */
+	__csi_clk_t		clock;		/* input data valid of the input clock edge type */
+	int			iocfg;		/* 0 for csi back , 1 for csi front */
 }__csi_subdev_info_t;
+
 struct csi_buf_addr {
 	dma_addr_t	y;
 	dma_addr_t	cb;
