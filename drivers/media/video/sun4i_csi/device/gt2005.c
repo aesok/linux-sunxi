@@ -60,7 +60,6 @@ MODULE_LICENSE("GPL");
 #define VREF_POL	CSI_HIGH
 #define HREF_POL	CSI_HIGH
 #define CLK_POL		CSI_RISING
-#define IO_CFG		0						//0:csi back 1:csi front
 #define V4L2_IDENT_SENSOR 0x2005
 
 //define the voltage level of control signal
@@ -122,7 +121,6 @@ __csi_subdev_info_t ccm_info_con =
 	.vref 	= VREF_POL,
 	.href 	= HREF_POL,
 	.clock	= CLK_POL,
-	.iocfg	= IO_CFG,
 };
 
 struct sensor_info {
@@ -146,6 +144,14 @@ struct sensor_info {
 	enum v4l2_colorfx clrfx;
   enum v4l2_flash_mode flash_mode;
 	u8 clkrc;			/* Clock divider value */
+
+	/* Camera GPIO configuration */
+	char			stby[32];	/* Standby pin */
+	char			power[32];	/* Power-on pin */
+	char			reset[32];	/* Reset pin */
+
+	/* Flash GPIO configuration*/
+	char			flash[32];	/* Flash pin */
 };
 
 static inline struct sensor_info *to_state(struct v4l2_subdev *sd)
@@ -1246,39 +1252,28 @@ static int sensor_power(struct v4l2_subdev *sd, int on)
 {
 	struct csi_dev *dev=(struct csi_dev *)dev_get_drvdata(sd->v4l2_dev->dev);
 	struct sensor_info *info = to_state(sd);
-	char csi_stby_str[32],csi_power_str[32],csi_reset_str[32];
-
-	if(info->ccm_info->iocfg == 0) {
-		strcpy(csi_stby_str,"csi_stby");
-		strcpy(csi_power_str,"csi_power_en");
-		strcpy(csi_reset_str,"csi_reset");
-	} else if(info->ccm_info->iocfg == 1) {
-	  strcpy(csi_stby_str,"csi_stby_b");
-	  strcpy(csi_power_str,"csi_power_en_b");
-	  strcpy(csi_reset_str,"csi_reset_b");
-	}
 
   switch(on)
 	{
 		case CSI_SUBDEV_STBY_ON:
 			csi_dev_dbg("CSI_SUBDEV_STBY_ON\n");
 			//reset off io
-			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_RST_OFF,csi_reset_str);
+			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_RST_OFF, info->reset);
 			msleep(10);
 			//active mclk before stadby in
 			clk_enable(dev->csi_module_clk);
 			msleep(100);
 			//standby on io
-			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_STBY_ON,csi_stby_str);
+			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_STBY_ON, info->stby);
 			msleep(100);
-			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_STBY_OFF,csi_stby_str);
+			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_STBY_OFF, info->stby);
 			msleep(100);
-			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_STBY_ON,csi_stby_str);
+			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_STBY_ON, info->stby);
 			msleep(100);
 			//inactive mclk after stadby in
 			clk_disable(dev->csi_module_clk);
 
-			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_RST_ON,csi_reset_str);
+			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_RST_ON, info->reset);
 			msleep(10);
 			break;
 		case CSI_SUBDEV_STBY_OFF:
@@ -1287,12 +1282,12 @@ static int sensor_power(struct v4l2_subdev *sd, int on)
 			clk_enable(dev->csi_module_clk);
 			msleep(10);
 			//reset off io
-			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_RST_OFF,csi_reset_str);
+			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_RST_OFF, info->reset);
 			msleep(10);
-			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_RST_ON,csi_reset_str);
+			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_RST_ON, info->reset);
 			msleep(100);
-			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_RST_OFF,csi_reset_str);
-			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_STBY_OFF,csi_stby_str);
+			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_RST_OFF, info->reset);
+			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_STBY_OFF, info->stby);
 			msleep(10);
 			break;
 		case CSI_SUBDEV_PWR_ON:
@@ -1300,13 +1295,13 @@ static int sensor_power(struct v4l2_subdev *sd, int on)
 			//inactive mclk before power on
 			clk_disable(dev->csi_module_clk);
 			//power on reset
-			gpio_set_one_pin_io_status(dev->csi_pin_hd,1,csi_stby_str);//set the gpio to output
-			gpio_set_one_pin_io_status(dev->csi_pin_hd,1,csi_reset_str);//set the gpio to output
-			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_STBY_ON,csi_stby_str);
-			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_RST_ON,csi_reset_str);
+			gpio_set_one_pin_io_status(dev->csi_pin_hd,1, info->stby);//set the gpio to output
+			gpio_set_one_pin_io_status(dev->csi_pin_hd,1, info->reset);//set the gpio to output
+			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_STBY_ON, info->stby);
+			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_RST_ON, info->reset);
 			msleep(1);
 			//power supply
-			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_PWR_ON,csi_power_str);
+			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_PWR_ON, info->power);
 			msleep(10);
 			if(dev->dvdd) {
 				regulator_enable(dev->dvdd);
@@ -1323,13 +1318,13 @@ static int sensor_power(struct v4l2_subdev *sd, int on)
 			//active mclk before power on
 			clk_enable(dev->csi_module_clk);
 			//reset after power on
-			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_RST_OFF,csi_reset_str);
+			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_RST_OFF, info->reset);
 			msleep(10);
-			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_RST_ON,csi_reset_str);
+			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_RST_ON, info->reset);
 			msleep(100);
-			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_RST_OFF,csi_reset_str);
+			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_RST_OFF, info->reset);
 			msleep(100);
-			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_STBY_OFF,csi_stby_str);
+			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_STBY_OFF, info->stby);
 			msleep(10);
 			break;
 
@@ -1348,15 +1343,15 @@ static int sensor_power(struct v4l2_subdev *sd, int on)
 				regulator_disable(dev->dvdd);
 				msleep(10);
 			}
-			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_PWR_OFF,csi_power_str);
+			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_PWR_OFF, info->power);
 			msleep(10);
 
 			//inactive mclk after power off
 			clk_disable(dev->csi_module_clk);
 
 			//set the io to hi-z
-			gpio_set_one_pin_io_status(dev->csi_pin_hd,0,csi_reset_str);//set the gpio to input
-			gpio_set_one_pin_io_status(dev->csi_pin_hd,0,csi_stby_str);//set the gpio to input
+			gpio_set_one_pin_io_status(dev->csi_pin_hd,0, info->reset);//set the gpio to input
+			gpio_set_one_pin_io_status(dev->csi_pin_hd,0, info->stby);//set the gpio to input
 			break;
 		default:
 			return -EINVAL;
@@ -1369,33 +1364,26 @@ static int sensor_reset(struct v4l2_subdev *sd, u32 val)
 {
 	struct csi_dev *dev=(struct csi_dev *)dev_get_drvdata(sd->v4l2_dev->dev);
 	struct sensor_info *info = to_state(sd);
-	char csi_reset_str[32];
-
-	if(info->ccm_info->iocfg == 0) {
-		strcpy(csi_reset_str,"csi_reset");
-	} else if(info->ccm_info->iocfg == 1) {
-	  strcpy(csi_reset_str,"csi_reset_b");
-	}
 
 	switch(val)
 	{
 		case CSI_SUBDEV_RST_OFF:
 			csi_dev_dbg("CSI_SUBDEV_RST_OFF\n");
-			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_RST_OFF,csi_reset_str);
+			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_RST_OFF, info->reset);
 			msleep(10);
 			break;
 		case CSI_SUBDEV_RST_ON:
 			csi_dev_dbg("CSI_SUBDEV_RST_ON\n");
-			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_RST_ON,csi_reset_str);
+			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_RST_ON, info->reset);
 			msleep(10);
 			break;
 		case CSI_SUBDEV_RST_PUL:
 			csi_dev_dbg("CSI_SUBDEV_RST_PUL\n");
-			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_RST_OFF,csi_reset_str);
+			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_RST_OFF, info->reset);
 			msleep(10);
-			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_RST_ON,csi_reset_str);
+			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_RST_ON, info->reset);
 			msleep(100);
-			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_RST_OFF,csi_reset_str);
+			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_RST_OFF, info->reset);
 			msleep(10);
 			break;
 		default:
@@ -1454,13 +1442,11 @@ static long sensor_ioctl(struct v4l2_subdev *sd, unsigned int cmd, void *arg)
 			ccm_info->vref 	=	info->ccm_info->vref ;
 			ccm_info->href 	=	info->ccm_info->href ;
 			ccm_info->clock	=	info->ccm_info->clock;
-			ccm_info->iocfg	=	info->ccm_info->iocfg;
 
 			csi_dev_dbg("ccm_info.mclk=%x\n ",info->ccm_info->mclk);
 			csi_dev_dbg("ccm_info.vref=%x\n ",info->ccm_info->vref);
 			csi_dev_dbg("ccm_info.href=%x\n ",info->ccm_info->href);
 			csi_dev_dbg("ccm_info.clock=%x\n ",info->ccm_info->clock);
-			csi_dev_dbg("ccm_info.iocfg=%x\n ",info->ccm_info->iocfg);
 
 			break;
 		}
@@ -1475,13 +1461,21 @@ static long sensor_ioctl(struct v4l2_subdev *sd, unsigned int cmd, void *arg)
 			info->ccm_info->vref 	=	ccm_info->vref 	;
 			info->ccm_info->href 	=	ccm_info->href 	;
 			info->ccm_info->clock	=	ccm_info->clock	;
-			info->ccm_info->iocfg	=	ccm_info->iocfg	;
+
+			strcpy(info->stby, ccm_info->stby);
+			strcpy(info->power, ccm_info->power);
+			strcpy(info->reset, ccm_info->reset);
+			strcpy(info->flash, ccm_info->flash);
 
 			csi_dev_dbg("ccm_info.mclk=%x\n ",info->ccm_info->mclk);
 			csi_dev_dbg("ccm_info.vref=%x\n ",info->ccm_info->vref);
 			csi_dev_dbg("ccm_info.href=%x\n ",info->ccm_info->href);
 			csi_dev_dbg("ccm_info.clock=%x\n ",info->ccm_info->clock);
-			csi_dev_dbg("ccm_info.iocfg=%x\n ",info->ccm_info->iocfg);
+
+			csi_dev_dbg("info.stby=%s\n ", info->stby);
+			csi_dev_dbg("info.power=%s\n ", info->power);
+			csi_dev_dbg("info.reset=%s\n ", info->reset);
+			csi_dev_dbg("info.flash=%s\n ", info->flash);
 
 			break;
 		}
@@ -2471,27 +2465,20 @@ static int sensor_s_flash_mode(struct v4l2_subdev *sd,
 {
 	struct sensor_info *info = to_state(sd);
 	struct csi_dev *dev=(struct csi_dev *)dev_get_drvdata(sd->v4l2_dev->dev);
-	char csi_flash_str[32];
 	int flash_on,flash_off;
-
-	if(info->ccm_info->iocfg == 0) {
-		strcpy(csi_flash_str,"csi_flash");
-	} else if(info->ccm_info->iocfg == 1) {
-	  strcpy(csi_flash_str,"csi_flash_b");
-	}
 
 	flash_on = (dev->flash_pol!=0)?1:0;
 	flash_off = (flash_on==1)?0:1;
 
 	switch (value) {
 	case V4L2_FLASH_MODE_OFF:
-	  gpio_write_one_pin_value(dev->csi_pin_hd,flash_off,csi_flash_str);
+	  gpio_write_one_pin_value(dev->csi_pin_hd,flash_off, info->flash);
 		break;
 	case V4L2_FLASH_MODE_AUTO:
 		return -EINVAL;
 		break;
 	case V4L2_FLASH_MODE_ON:
-		gpio_write_one_pin_value(dev->csi_pin_hd,flash_on,csi_flash_str);
+		gpio_write_one_pin_value(dev->csi_pin_hd,flash_on, info->flash);
 		break;
 	case V4L2_FLASH_MODE_TORCH:
 		return -EINVAL;

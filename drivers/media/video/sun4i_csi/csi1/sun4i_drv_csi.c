@@ -1838,7 +1838,17 @@ reg_sd:
 			csi_err("Error when get ccm info,input_num = %d,use default!\n",input_num);
 		}
 
-		dev->ccm_cfg[input_num]->ccm_info.iocfg = input_num;
+		if(input_num == 0) {
+			strcpy(dev->ccm_cfg[input_num]->ccm_info.stby, "csi_stby");
+			strcpy(dev->ccm_cfg[input_num]->ccm_info.power, "csi_power_en");
+			strcpy(dev->ccm_cfg[input_num]->ccm_info.reset, "csi_reset");
+			strcpy(dev->ccm_cfg[input_num]->ccm_info.flash, "csi_flash");
+		} else if(input_num == 1) {
+			strcpy(dev->ccm_cfg[input_num]->ccm_info.stby, "csi_stby_b");
+			strcpy(dev->ccm_cfg[input_num]->ccm_info.power, "csi_power_en_b");
+			strcpy(dev->ccm_cfg[input_num]->ccm_info.reset, "csi_reset_b");
+			strcpy(dev->ccm_cfg[input_num]->ccm_info.flash, "csi_flash_b");
+		}
 
 		ret = v4l2_subdev_call(dev->ccm_cfg[input_num]->sd,core,ioctl,CSI_SUBDEV_CMD_SET_INFO,&dev->ccm_cfg[input_num]->ccm_info);
 		if (ret < 0)
@@ -1890,7 +1900,6 @@ reg_sd:
 	{
 		csi_dbg(0,"dev->ccm_cfg[%d]->sd = %p\n",input_num,dev->ccm_cfg[input_num]->sd);
 		csi_dbg(0,"dev->ccm_cfg[%d]->ccm_info = %p\n",input_num,&dev->ccm_cfg[input_num]->ccm_info);
-		csi_dbg(0,"dev->ccm_cfg[%d]->ccm_info.iocfg = %d\n",input_num,dev->ccm_cfg[input_num]->ccm_info.iocfg);
 		csi_dbg(0,"dev->ccm_cfg[%d]->ccm_info.vref = %d\n",input_num,dev->ccm_cfg[input_num]->ccm_info.vref);
 		csi_dbg(0,"dev->ccm_cfg[%d]->ccm_info.href = %d\n",input_num,dev->ccm_cfg[input_num]->ccm_info.href);
 		csi_dbg(0,"dev->ccm_cfg[%d]->ccm_info.clock = %d\n",input_num,dev->ccm_cfg[input_num]->ccm_info.clock);

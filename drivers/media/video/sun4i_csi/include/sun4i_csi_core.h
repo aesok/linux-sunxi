@@ -249,7 +249,14 @@ typedef struct tag_CSI_SUBDEV_INFO
 	__csi_ref_t		vref;		/* input vref signal polarity */
 	__csi_ref_t		href;		/* input href signal polarity */
 	__csi_clk_t		clock;		/* input data valid of the input clock edge type */
-	int			iocfg;		/* 0 for csi back , 1 for csi front */
+
+	/* Camera GPIO configuration */
+	char 			stby[32];	/* Standby pin */
+	char			power[32];	/* Power-on pin */
+	char			reset[32];	/* Reset pin */
+
+	/* Flash GPIO configuration*/
+	char			flash[32];	/* Flash pin */
 }__csi_subdev_info_t;
 
 struct csi_buf_addr {
