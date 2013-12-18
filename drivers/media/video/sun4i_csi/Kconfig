@@ -108,3 +108,11 @@ config CSI_OV5640
 	---help---
 	  This is a Video4Linux2 sensor-level driver for the OmniVision
 	  OV5640 5M camera.
+
+config CSI_GC0309
+	tristate "GalaxyCore GC0309 VGA sensor support"
+	depends on I2C && VIDEO_V4L2
+	select	CSI_DEV_SEL
+	---help---
+	  This is a Video4Linux2 sensor-level driver for the GalaxyCore
+	  GC0309 VGA camera.
