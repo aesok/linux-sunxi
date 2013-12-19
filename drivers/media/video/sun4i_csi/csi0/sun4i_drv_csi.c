@@ -496,7 +496,6 @@ static int update_ccm_info(struct csi_dev *dev , struct ccm_config *ccm_cfg)
    dev->interface = ccm_cfg->interface;
 	 dev->vflip = ccm_cfg->vflip;
 	 dev->hflip = ccm_cfg->hflip;
-	 dev->flash_pol = ccm_cfg->flash_pol;
 	 dev->iovdd = ccm_cfg->iovdd;
 	 dev->avdd = ccm_cfg->avdd;
 	 dev->dvdd = ccm_cfg->dvdd;
@@ -1837,6 +1836,7 @@ reg_sd:
 			csi_err("Error when get ccm info,input_num = %d,use default!\n",input_num);
 		}
 
+		dev->ccm_cfg[input_num]->ccm_info.flash_pol = dev->ccm_cfg[input_num]->flash_pol;
 		if(input_num == 0) {
 			strcpy(dev->ccm_cfg[input_num]->ccm_info.stby, "csi_stby");
 			strcpy(dev->ccm_cfg[input_num]->ccm_info.power, "csi_power_en");

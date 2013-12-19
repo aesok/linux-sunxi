@@ -152,6 +152,7 @@ struct sensor_info {
 
 	/* Flash GPIO configuration*/
 	char			flash[32];	/* Flash pin */
+	int			flash_pol;	/* Flash pin level */
 };
 
 static inline struct sensor_info *to_state(struct v4l2_subdev *sd)
@@ -1471,11 +1472,13 @@ static long sensor_ioctl(struct v4l2_subdev *sd, unsigned int cmd, void *arg)
 			csi_dev_dbg("ccm_info.vref=%x\n ",info->ccm_info->vref);
 			csi_dev_dbg("ccm_info.href=%x\n ",info->ccm_info->href);
 			csi_dev_dbg("ccm_info.clock=%x\n ",info->ccm_info->clock);
+			info->flash_pol	= ccm_info->flash_pol;
 
 			csi_dev_dbg("info.stby=%s\n ", info->stby);
 			csi_dev_dbg("info.power=%s\n ", info->power);
 			csi_dev_dbg("info.reset=%s\n ", info->reset);
 			csi_dev_dbg("info.flash=%s\n ", info->flash);
+			csi_dev_dbg("info.flash_pol=%i\n ",info->flash_pol);
 
 			break;
 		}
@@ -2467,7 +2470,7 @@ static int sensor_s_flash_mode(struct v4l2_subdev *sd,
 	struct csi_dev *dev=(struct csi_dev *)dev_get_drvdata(sd->v4l2_dev->dev);
 	int flash_on,flash_off;
 
-	flash_on = (dev->flash_pol!=0)?1:0;
+	flash_on = (info->flash_pol!=0)?1:0;
 	flash_off = (flash_on==1)?0:1;
 
 	switch (value) {

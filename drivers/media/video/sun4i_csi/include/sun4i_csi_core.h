@@ -257,6 +257,7 @@ typedef struct tag_CSI_SUBDEV_INFO
 
 	/* Flash GPIO configuration*/
 	char			flash[32];	/* Flash pin */
+	int			flash_pol;	/* Flash pin level */
 }__csi_subdev_info_t;
 
 struct csi_buf_addr {
@@ -371,7 +372,6 @@ struct csi_dev {
 	int interface;
 	int vflip;
 	int hflip;
-	int flash_pol;
 
 	/*parameters*/
 	__csi_conf_t			csi_mode;
