@@ -240,6 +240,13 @@ typedef struct tag_CSI_INT_STATUS
     _Bool vsync_trig;
 }__csi_int_status_t;
 
+struct csi_sensor_platform_data {
+	/* Voltage sources */
+	char iovdd_str[32];		/* Interface voltage source of sensor module */
+	char avdd_str[32];		/* Anlog voltage source of sensor module */
+	char dvdd_str[32];		/* Core voltage source of sensor module */
+};
+
 /*
  * csi sub device info
  */

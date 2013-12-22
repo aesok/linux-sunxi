@@ -1853,7 +1853,13 @@ static int ov7670_probe(struct i2c_client *client,
 {
 	struct v4l2_subdev *sd;
 	struct ov7670_info *info;
+	struct csi_sensor_platform_data *pdata = client->dev.platform_data;
 //	int ret;
+
+	if (pdata == NULL) {
+		v4l_err(client, "No platform data!\n");
+		return -ENODEV;
+	}
 
 	info = kzalloc(sizeof(struct ov7670_info), GFP_KERNEL);
 	if (info == NULL)

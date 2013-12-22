@@ -109,14 +109,26 @@ module_param(i2c_addr,uint, S_IRUGO|S_IWUSR);
 module_param_string(ccm_b, ccm_b, sizeof(ccm_b), S_IRUGO|S_IWUSR);
 module_param(i2c_addr_b,uint, S_IRUGO|S_IWUSR);
 
+static struct csi_sensor_platform_data sensor_0_pdata = {
+	.iovdd_str = "",
+	.avdd_str = "",
+	.dvdd_str = "",
+};
+
+static struct csi_sensor_platform_data sensor_1_pdata = {
+	.iovdd_str = "",
+	.avdd_str = "",
+	.dvdd_str = "",
+};
+
 static struct i2c_board_info  dev_sensor[] =  {
 	{
 		//I2C_BOARD_INFO(ccm, i2c_addr),
-		.platform_data	= NULL,
+		.platform_data	= &sensor_0_pdata,
 	},
 	{
 		//I2C_BOARD_INFO(ccm, i2c_addr),
-		.platform_data	= NULL,
+		.platform_data	= &sensor_1_pdata,
 	},
 };
 
@@ -259,6 +271,13 @@ static struct csi_fmt *get_format(struct v4l2_format *f)
 
 	return &formats[k];
 };
+
+static void csi_print_sensor_pdata(const struct csi_sensor_platform_data *pdata)
+{
+	csi_dbg(0, "platform_data->iovdd_str = %s\n", pdata->iovdd_str);
+	csi_dbg(0, "platform_data->avdd_str = %s\n", pdata->avdd_str);
+	csi_dbg(0, "platform_data->dvdd_str = %s\n", pdata->dvdd_str);
+}
 
 void static inline bsp_csi_set_buffer_address(struct csi_dev *dev,__csi_buf_t buf, u32 addr)
 {
@@ -1515,6 +1534,82 @@ static struct video_device csi_template = {
 	.release	= video_device_release,
 };
 
+static int fetch_sensor_config(struct csi_sensor_platform_data *sensor_pdata)
+{
+	int dev_qty;
+	int ret;
+
+	/* fetch device quatity issue */
+	ret = script_parser_fetch("csi1_para","csi_dev_qty", &dev_qty , sizeof(dev_qty));
+	if (ret) {
+		csi_err("fetch csi_dev_qty from sys_config failed\n");
+	}
+
+	if(dev_qty < 1)
+		return 0;
+
+	ret = script_parser_fetch("csi0_para","csi_iovdd", (int *)&sensor_pdata->iovdd_str,
+					sizeof(sensor_pdata->iovdd_str));
+	if (ret) {
+		csi_err("fetch csi_iovdd from sys_config failed\n");
+	}
+
+	ret = script_parser_fetch("csi0_para","csi_avdd", (int *)&sensor_pdata->avdd_str,
+					sizeof(sensor_pdata->avdd_str));
+	if (ret) {
+		csi_err("fetch csi_avdd from sys_config failed\n");
+	}
+
+	ret = script_parser_fetch("csi0_para","csi_dvdd", (int *)&sensor_pdata->dvdd_str,
+					sizeof(sensor_pdata->dvdd_str));
+	if (ret) {
+		csi_err("fetch csi_dvdd from sys_config failed\n");
+	}
+
+	csi_dbg(0, "sensor_%d_pdata\n", 0);
+	csi_print_sensor_pdata(sensor_pdata);
+
+	return 0;
+}
+
+static int fetch_sensor_b_config(struct csi_sensor_platform_data *sensor_pdata)
+{
+	int dev_qty;
+	int ret;
+
+	/* fetch device quatity issue */
+	ret = script_parser_fetch("csi1_para","csi_dev_qty", &dev_qty , sizeof(dev_qty));
+	if (ret) {
+		csi_err("fetch csi_dev_qty from sys_config failed\n");
+	}
+
+	if(dev_qty < 1)
+		return 0;
+
+	ret = script_parser_fetch("csi0_para","csi_iovdd_b", (int *)&sensor_pdata->iovdd_str,
+					sizeof(sensor_pdata->iovdd_str));
+	if (ret) {
+		csi_err("fetch csi_iovdd_b from sys_config failed\n");
+	}
+
+	ret = script_parser_fetch("csi0_para","csi_avdd_b", (int *)&sensor_pdata->avdd_str,
+					sizeof(sensor_pdata->avdd_str));
+	if (ret) {
+		csi_err("fetch csi_avdd_b from sys_config failed\n");
+	}
+
+	ret = script_parser_fetch("csi0_para","csi_dvdd_b", (int *)&sensor_pdata->dvdd_str,
+					sizeof(sensor_pdata->dvdd_str));
+	if (ret) {
+		csi_err("fetch csi_dvdd_b from sys_config failed\n");
+	}
+
+	csi_dbg(0, "sensor_%d_pdata\n", 0);
+	csi_print_sensor_pdata(sensor_pdata);
+
+	return 0;
+}
+
 static int fetch_config(struct csi_dev *dev)
 {
 	int input_num,ret;
@@ -2177,6 +2272,9 @@ static int __init csi_init(void)
 		csi_err("csi_used=0,csi driver is not enabled!\n");
 		return 0;
 	}
+
+	fetch_sensor_config (&sensor_0_pdata);
+	fetch_sensor_b_config (&sensor_1_pdata);
 
 	ret = platform_driver_register(&csi_driver);
 
