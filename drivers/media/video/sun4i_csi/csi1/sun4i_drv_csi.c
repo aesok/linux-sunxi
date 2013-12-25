@@ -1548,19 +1548,19 @@ static int fetch_sensor_config(struct csi_sensor_platform_data *sensor_pdata)
 	if(dev_qty < 1)
 		return 0;
 
-	ret = script_parser_fetch("csi0_para","csi_iovdd", (int *)&sensor_pdata->iovdd_str,
+	ret = script_parser_fetch("csi1_para","csi_iovdd", (int *)&sensor_pdata->iovdd_str,
 					sizeof(sensor_pdata->iovdd_str));
 	if (ret) {
 		csi_err("fetch csi_iovdd from sys_config failed\n");
 	}
 
-	ret = script_parser_fetch("csi0_para","csi_avdd", (int *)&sensor_pdata->avdd_str,
+	ret = script_parser_fetch("csi1_para","csi_avdd", (int *)&sensor_pdata->avdd_str,
 					sizeof(sensor_pdata->avdd_str));
 	if (ret) {
 		csi_err("fetch csi_avdd from sys_config failed\n");
 	}
 
-	ret = script_parser_fetch("csi0_para","csi_dvdd", (int *)&sensor_pdata->dvdd_str,
+	ret = script_parser_fetch("csi1_para","csi_dvdd", (int *)&sensor_pdata->dvdd_str,
 					sizeof(sensor_pdata->dvdd_str));
 	if (ret) {
 		csi_err("fetch csi_dvdd from sys_config failed\n");
@@ -1586,19 +1586,19 @@ static int fetch_sensor_b_config(struct csi_sensor_platform_data *sensor_pdata)
 	if(dev_qty < 1)
 		return 0;
 
-	ret = script_parser_fetch("csi0_para","csi_iovdd_b", (int *)&sensor_pdata->iovdd_str,
+	ret = script_parser_fetch("csi1_para","csi_iovdd_b", (int *)&sensor_pdata->iovdd_str,
 					sizeof(sensor_pdata->iovdd_str));
 	if (ret) {
 		csi_err("fetch csi_iovdd_b from sys_config failed\n");
 	}
 
-	ret = script_parser_fetch("csi0_para","csi_avdd_b", (int *)&sensor_pdata->avdd_str,
+	ret = script_parser_fetch("csi1_para","csi_avdd_b", (int *)&sensor_pdata->avdd_str,
 					sizeof(sensor_pdata->avdd_str));
 	if (ret) {
 		csi_err("fetch csi_avdd_b from sys_config failed\n");
 	}
 
-	ret = script_parser_fetch("csi0_para","csi_dvdd_b", (int *)&sensor_pdata->dvdd_str,
+	ret = script_parser_fetch("csi1_para","csi_dvdd_b", (int *)&sensor_pdata->dvdd_str,
 					sizeof(sensor_pdata->dvdd_str));
 	if (ret) {
 		csi_err("fetch csi_dvdd_b from sys_config failed\n");
