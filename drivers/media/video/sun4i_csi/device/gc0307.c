@@ -2570,7 +2570,7 @@ static int sensor_probe(struct i2c_client *client,
 		return -ENODEV;
 	}
 
-	info = kzalloc(sizeof(struct sensor_info), GFP_KERNEL);
+	info = devm_kzalloc(&client->dev, sizeof(*info), GFP_KERNEL);
 	if (info == NULL)
 		return -ENOMEM;
 	sd = &info->sd;
@@ -2604,7 +2604,7 @@ static int sensor_remove(struct i2c_client *client)
 	struct v4l2_subdev *sd = i2c_get_clientdata(client);
 
 	v4l2_device_unregister_subdev(sd);
-	kfree(to_state(sd));
+
 	return 0;
 }
 
