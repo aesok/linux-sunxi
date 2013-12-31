@@ -1862,7 +1862,7 @@ static int ov7670_probe(struct i2c_client *client,
 	int ret;
 
 	if (pdata == NULL) {
-		v4l_err(client, "No platform data!\n");
+		dev_err(&client->dev, "No platform data!\n");
 		return -ENODEV;
 	}
 
