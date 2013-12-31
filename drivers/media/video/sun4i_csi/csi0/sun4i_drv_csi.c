@@ -515,9 +515,6 @@ static int update_ccm_info(struct csi_dev *dev , struct ccm_config *ccm_cfg)
    dev->interface = ccm_cfg->interface;
 	 dev->vflip = ccm_cfg->vflip;
 	 dev->hflip = ccm_cfg->hflip;
-	 dev->iovdd = ccm_cfg->iovdd;
-	 dev->avdd = ccm_cfg->avdd;
-	 dev->dvdd = ccm_cfg->dvdd;
 	 return v4l2_subdev_call(dev->sd,core,ioctl,CSI_SUBDEV_CMD_SET_INFO,dev->ccm_info);
 }
 
@@ -1662,23 +1659,6 @@ static int fetch_config(struct csi_dev *dev)
 			csi_err("fetch csi_if from sys_config failed\n");
 		}
 
-		/* fetch power issue*/
-
-		ret = script_parser_fetch("csi0_para","csi_iovdd", (int *)&dev->ccm_cfg[0]->iovdd_str , 32*sizeof(char));
-		if (ret) {
-			csi_err("fetch csi_iovdd from sys_config failed\n");
-		}
-
-		ret = script_parser_fetch("csi0_para","csi_avdd", (int *)&dev->ccm_cfg[0]->avdd_str , 32*sizeof(char));
-		if (ret) {
-			csi_err("fetch csi_avdd from sys_config failed\n");
-		}
-
-		ret = script_parser_fetch("csi0_para","csi_dvdd", (int *)&dev->ccm_cfg[0]->dvdd_str , 32*sizeof(char));
-		if (ret) {
-			csi_err("fetch csi_dvdd from sys_config failed\n");
-		}
-
 		/* fetch flip issue */
 		ret = script_parser_fetch("csi0_para","csi_vflip", &dev->ccm_cfg[0]->vflip , sizeof(int));
 		if (ret) {
@@ -1728,22 +1708,6 @@ static int fetch_config(struct csi_dev *dev)
 			csi_err("fetch csi_if_b from sys_config failed\n");
 		}
 
-		/* fetch power issue*/
-		ret = script_parser_fetch("csi0_para","csi_iovdd_b", (int *)&dev->ccm_cfg[1]->iovdd_str , 32*sizeof(char));
-		if (ret) {
-			csi_err("fetch csi_iovdd_b from sys_config failed\n");
-		}
-
-		ret = script_parser_fetch("csi0_para","csi_avdd_b", (int *)&dev->ccm_cfg[1]->avdd_str , 32*sizeof(char));
-		if (ret) {
-			csi_err("fetch csi_avdd_b from sys_config failed\n");
-		}
-
-		ret = script_parser_fetch("csi0_para","csi_dvdd_b", (int *)&dev->ccm_cfg[1]->dvdd_str , 32*sizeof(char));
-		if (ret) {
-			csi_err("fetch csi_dvdd_b from sys_config failed\n");
-		}
-
 		/* fetch flip issue */
 		ret = script_parser_fetch("csi0_para","csi_vflip_b", &dev->ccm_cfg[1]->vflip , sizeof(int));
 		if (ret) {
@@ -1771,9 +1735,6 @@ static int fetch_config(struct csi_dev *dev)
 		csi_dbg(0,"dev->ccm_cfg[%d]->interface = %x\n",input_num,dev->ccm_cfg[input_num]->interface);
 		csi_dbg(0,"dev->ccm_cfg[%d]->vflip = %x\n",input_num,dev->ccm_cfg[input_num]->vflip);
 		csi_dbg(0,"dev->ccm_cfg[%d]->hflip = %x\n",input_num,dev->ccm_cfg[input_num]->hflip);
-		csi_dbg(0,"dev->ccm_cfg[%d]->iovdd_str = %s\n",input_num,dev->ccm_cfg[input_num]->iovdd_str);
-		csi_dbg(0,"dev->ccm_cfg[%d]->avdd_str = %s\n",input_num,dev->ccm_cfg[input_num]->avdd_str);
-		csi_dbg(0,"dev->ccm_cfg[%d]->dvdd_str = %s\n",input_num,dev->ccm_cfg[input_num]->dvdd_str);
 		csi_dbg(0,"dev->ccm_cfg[%d]->flash_pol = %x\n",input_num,dev->ccm_cfg[input_num]->flash_pol);
 	}
 
@@ -1951,33 +1912,6 @@ reg_sd:
 		}
 
 		/*power issue*/
-		dev->ccm_cfg[input_num]->iovdd = NULL;
-		dev->ccm_cfg[input_num]->avdd = NULL;
-		dev->ccm_cfg[input_num]->dvdd = NULL;
-
-		if(strcmp(dev->ccm_cfg[input_num]->iovdd_str,"")) {
-			dev->ccm_cfg[input_num]->iovdd = regulator_get(NULL, dev->ccm_cfg[input_num]->iovdd_str);
-			if (dev->ccm_cfg[input_num]->iovdd == NULL) {
-				csi_err("get regulator csi_iovdd error!input_num = %d\n",input_num);
-				goto free_dev;
-			}
-		}
-
-		if(strcmp(dev->ccm_cfg[input_num]->avdd_str,"")) {
-			dev->ccm_cfg[input_num]->avdd = regulator_get(NULL, dev->ccm_cfg[input_num]->avdd_str);
-			if (dev->ccm_cfg[input_num]->avdd == NULL) {
-				csi_err("get regulator csi_avdd error!input_num = %d\n",input_num);
-				goto free_dev;
-			}
-		}
-
-		if(strcmp(dev->ccm_cfg[input_num]->dvdd_str,"")) {
-			dev->ccm_cfg[input_num]->dvdd = regulator_get(NULL, dev->ccm_cfg[input_num]->dvdd_str);
-			if (dev->ccm_cfg[input_num]->dvdd == NULL) {
-				csi_err("get regulator csi_dvdd error!input_num = %d\n",input_num);
-				goto free_dev;
-			}
-		}
 
 		if(dev->stby_mode == 1) {
 			csi_print("power on and power off camera!\n");

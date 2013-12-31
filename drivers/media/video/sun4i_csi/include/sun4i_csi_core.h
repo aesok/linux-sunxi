@@ -306,9 +306,6 @@ static LIST_HEAD(csi_devlist);
 
 struct ccm_config {
 	char ccm[I2C_NAME_SIZE];
-	char iovdd_str[32];
-	char avdd_str[32];
-	char dvdd_str[32];
 	int twi_id;
 	uint i2c_addr;
 	int vflip;
@@ -316,9 +313,6 @@ struct ccm_config {
 	int stby_mode;
 	int interface;
 	int flash_pol;
-	struct regulator 	 *iovdd;		  /*interface voltage source of sensor module*/
-	struct regulator 	 *avdd;			/*anlog voltage source of sensor module*/
-	struct regulator 	 *dvdd;			/*core voltage source of sensor module*/
 	__csi_subdev_info_t ccm_info;
 	struct v4l2_subdev			*sd;
 };
@@ -371,9 +365,6 @@ struct csi_dev {
 	/*power issue*/
 
 	int								 stby_mode;
-	struct regulator 	 *iovdd;		  /*interface voltage source of sensor module*/
-  struct regulator 	 *avdd;			/*anlog voltage source of sensor module*/
-  struct regulator 	 *dvdd;			/*core voltage source of sensor module*/
 
 	/* attribution */
 	int interface;

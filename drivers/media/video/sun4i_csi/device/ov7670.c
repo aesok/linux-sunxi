@@ -234,6 +234,11 @@ struct ov7670_info {
 	enum v4l2_flash_mode flash_mode;
 	u8 clkrc;			/* Clock divider value */
 
+	/* Power */
+	struct regulator 	*iovdd;		/* Interface voltage source of sensor module */
+	struct regulator 	*avdd;		/* Anlog voltage source of sensor module */
+	struct regulator 	*dvdd;		/* Core voltage source of sensor module */
+
 	/* Camera GPIO configuration */
 	char			stby[32];	/* Standby pin */
 	char			power[32];	/* Power-on pin */
@@ -670,16 +675,16 @@ static int ov7670_power(struct v4l2_subdev *sd, int on)
 			//power supply
 			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_PWR_ON, info->power);
 			msleep(10);
-			if(dev->dvdd) {
-				regulator_enable(dev->dvdd);
+			if (info->dvdd) {
+				regulator_enable(info->dvdd);
 				msleep(10);
 			}
-			if(dev->avdd) {
-				regulator_enable(dev->avdd);
+			if (info->avdd) {
+				regulator_enable(info->avdd);
 				msleep(10);
 			}
-			if(dev->iovdd) {
-				regulator_enable(dev->iovdd);
+			if (info->iovdd) {
+				regulator_enable(info->iovdd);
 				msleep(10);
 			}
 			//active mclk before power on
@@ -698,16 +703,16 @@ static int ov7670_power(struct v4l2_subdev *sd, int on)
 		case CSI_SUBDEV_PWR_OFF:
 			csi_dev_dbg("CSI_SUBDEV_PWR_OFF\n");
 			//power supply off
-			if(dev->iovdd) {
-				regulator_disable(dev->iovdd);
+			if (info->iovdd) {
+				regulator_disable(info->iovdd);
 				msleep(10);
 			}
-			if(dev->avdd) {
-				regulator_disable(dev->avdd);
+			if (info->avdd) {
+				regulator_disable(info->avdd);
 				msleep(10);
 			}
-			if(dev->dvdd) {
-				regulator_disable(dev->dvdd);
+			if (info->dvdd) {
+				regulator_disable(info->dvdd);
 				msleep(10);
 			}
 			gpio_write_one_pin_value(dev->csi_pin_hd,CSI_PWR_OFF, info->power);
@@ -1854,7 +1859,7 @@ static int ov7670_probe(struct i2c_client *client,
 	struct v4l2_subdev *sd;
 	struct ov7670_info *info;
 	struct csi_sensor_platform_data *pdata = client->dev.platform_data;
-//	int ret;
+	int ret;
 
 	if (pdata == NULL) {
 		v4l_err(client, "No platform data!\n");
@@ -1872,7 +1877,42 @@ static int ov7670_probe(struct i2c_client *client,
 	info->sat = 128;	/* Review this */
 	info->clkrc = 1;	/* 30fps */
 
+	info->iovdd = NULL;
+	info->avdd = NULL;
+	info->dvdd = NULL;
+
+	if (strlen(pdata->iovdd_str) != 0) {
+		info->iovdd = devm_regulator_get(&client->dev, pdata->iovdd_str);
+		if (IS_ERR(info->iovdd)) {
+			v4l2_err(sd, "Get regulator csi_iovdd (id = %s) error!\n", pdata->iovdd_str);
+			ret = PTR_ERR(info->iovdd);
+			goto error;
+		}
+	}
+
+	if (strlen(pdata->avdd_str) != 0) {
+		info->avdd = devm_regulator_get(&client->dev, pdata->avdd_str);
+		if (IS_ERR(info->avdd)) {
+			v4l2_err(sd, "Get regulator csi_avdd (id = %s) error!\n", pdata->avdd_str);
+			ret = PTR_ERR(info->avdd);
+			goto error;
+		}
+	}
+
+	if (strlen(pdata->dvdd_str) != 0) {
+		info->dvdd = devm_regulator_get(&client->dev, pdata->dvdd_str);
+		if (IS_ERR(info->dvdd)) {
+			v4l2_err(sd, "Get regulator csi_dvdd (id = %s) error!\n", pdata->dvdd_str);
+			ret = PTR_ERR(info->dvdd);
+			goto error;
+		}
+	}
+
 	return 0;
+
+error:
+	v4l2_device_unregister_subdev(sd);
+	return ret;
 }
 
 
