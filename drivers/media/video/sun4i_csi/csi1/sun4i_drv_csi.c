@@ -1535,6 +1535,7 @@ static int fetch_sensor_config(struct csi_sensor_platform_data *sensor_pdata)
 {
 	int ret;
 
+	/* fetch power regulators configuration */
 	ret = script_parser_fetch("csi1_para","csi_iovdd", (int *)&sensor_pdata->iovdd_str,
 					sizeof(sensor_pdata->iovdd_str));
 	if (ret) {
@@ -1556,6 +1557,46 @@ static int fetch_sensor_config(struct csi_sensor_platform_data *sensor_pdata)
 		return ret;
 	}
 
+	/* fetch camera io configuration */
+	ret = script_parser_fetch("csi1_para","csi_reset", (int *)&sensor_pdata->reset , sizeof(user_gpio_set_t)/sizeof(int));
+	if (ret) {
+		csi_err("fetch csi_reset from sys_config failed\n");
+		return ret;
+	}
+
+	ret = script_parser_fetch("csi1_para","csi_stby", (int *)&sensor_pdata->stby , sizeof(user_gpio_set_t)/sizeof(int));
+	if (ret) {
+		csi_err("fetch csi_stby from sys_config failed\n");
+		return ret;
+	}
+
+	ret = script_parser_fetch("csi1_para","csi_power_en", (int *)&sensor_pdata->power , sizeof(user_gpio_set_t)/sizeof(int));
+	if (ret) {
+		csi_err("fetch csi_power_en from sys_config failed\n");
+		return ret;
+	}
+
+	/* fetch auto focus io configuration */
+/*
+	ret = script_parser_fetch("csi1_para","csi_af_en", (int *)&sensor_pdata->af_power , sizeof(user_gpio_set_t)/sizeof(int));
+	if (ret) {
+		csi_err("fetch csi_af_en from sys_config failed\n");
+		return ret;
+	}
+*/
+	/* fetch flash io configuration */
+	ret = script_parser_fetch("csi1_para","csi_flash", (int *)&sensor_pdata->flash , sizeof(user_gpio_set_t)/sizeof(int));
+	if (ret) {
+		csi_err("fetch csi_flash from sys_config failed\n");
+		return ret;
+	}
+
+	ret = script_parser_fetch("csi1_para","csi_flash_pol", (int *)&sensor_pdata->flash_pol , sizeof(int));
+	if (ret) {
+		csi_err("fetch csi1 csi_flash_pol from sys_config failed\n");
+		return ret;
+	}
+
 	csi_dbg(0, "sensor_%d_pdata\n", 0);
 	csi_print_sensor_pdata(sensor_pdata);
 
@@ -1566,6 +1607,7 @@ static int fetch_sensor_b_config(struct csi_sensor_platform_data *sensor_pdata)
 {
 	int ret;
 
+	/* fetch power regulators configuration */
 	ret = script_parser_fetch("csi1_para","csi_iovdd_b", (int *)&sensor_pdata->iovdd_str,
 					sizeof(sensor_pdata->iovdd_str));
 	if (ret) {
@@ -1584,6 +1626,46 @@ static int fetch_sensor_b_config(struct csi_sensor_platform_data *sensor_pdata)
 					sizeof(sensor_pdata->dvdd_str));
 	if (ret) {
 		csi_err("fetch csi_dvdd_b from sys_config failed\n");
+		return ret;
+	}
+
+	/* fetch camera io configuration */
+	ret = script_parser_fetch("csi1_para","csi_reset_b", (int *)&sensor_pdata->reset , sizeof(user_gpio_set_t)/sizeof(int));
+	if (ret) {
+		csi_err("fetch csi_reset_b from sys_config failed\n");
+		return ret;
+	}
+
+	ret = script_parser_fetch("csi1_para","csi_stby_b", (int *)&sensor_pdata->stby , sizeof(user_gpio_set_t)/sizeof(int));
+	if (ret) {
+		csi_err("fetch csi_stby_b from sys_config failed\n");
+		return ret;
+	}
+
+	ret = script_parser_fetch("csi1_para","csi_power_en_b", (int *)&sensor_pdata->power , sizeof(user_gpio_set_t)/sizeof(int));
+	if (ret) {
+		csi_err("fetch csi_power_en_b from sys_config failed\n");
+		return ret;
+	}
+
+	/* fetch auto focus io configuration */
+/*
+	ret = script_parser_fetch("csi1_para","csi_af_en_b", (int *)&sensor_pdata->af_power , sizeof(user_gpio_set_t)/sizeof(int));
+	if (ret) {
+		csi_err("fetch csi_af_en_b from sys_config failed\n");
+		return ret;
+	}
+*/
+	/* fetch flash io configuration */
+	ret = script_parser_fetch("csi1_para","csi_flash_b", (int *)&sensor_pdata->flash , sizeof(user_gpio_set_t)/sizeof(int));
+	if (ret) {
+		csi_err("fetch csi_flash from sys_config failed\n");
+		return ret;
+	}
+
+	ret = script_parser_fetch("csi1_para","csi_flash_pol_b", (int *)&sensor_pdata->flash_pol , sizeof(int));
+	if (ret) {
+		csi_err("fetch csi_flash_pol_b from sys_config failed\n");
 		return ret;
 	}
 

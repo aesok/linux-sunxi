@@ -33,6 +33,7 @@
 #include <linux/videodev2.h>
 #include <linux/i2c.h>
 #include <media/v4l2-mediabus.h>//linux-3.0
+#include <plat/sys_config.h>
 
 //for internel driver debug
 #define DBG_EN   		0
@@ -245,6 +246,15 @@ struct csi_sensor_platform_data {
 	char iovdd_str[32];		/* Interface voltage source of sensor module */
 	char avdd_str[32];		/* Anlog voltage source of sensor module */
 	char dvdd_str[32];		/* Core voltage source of sensor module */
+
+	/* Camera GPIO configuration */
+	user_gpio_set_t	stby;		/* Standby pin */
+	user_gpio_set_t	power;		/* Power-on pin */
+	user_gpio_set_t	reset;		/* Reset pin */
+
+	/* Flash GPIO configuration*/
+	user_gpio_set_t	flash;		/* Flash pin */
+	int		flash_pol;	/* Flash pin level */
 };
 
 /*
