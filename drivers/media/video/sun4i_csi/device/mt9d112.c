@@ -45,6 +45,10 @@ MODULE_AUTHOR("raymonxiu");
 MODULE_DESCRIPTION("A low-level driver for Micron mt9d112 sensors");
 MODULE_LICENSE("GPL");
 
+static bool debug;
+module_param(debug, bool, 0644);
+MODULE_PARM_DESC(debug, "Debug level (0-1)");
+
 //for internel driver debug
 #define DEV_DBG_EN   		0
 #if(DEV_DBG_EN == 1)
