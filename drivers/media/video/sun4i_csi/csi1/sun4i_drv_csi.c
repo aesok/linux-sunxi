@@ -1587,7 +1587,7 @@ static int fetch_sensor_b_config(struct csi_sensor_platform_data *sensor_pdata)
 		return ret;
 	}
 
-	csi_dbg(0, "sensor_%d_pdata\n", 0);
+	csi_dbg(0, "sensor_%d_pdata\n", 1);
 	csi_print_sensor_pdata(sensor_pdata);
 
 	return 0;
