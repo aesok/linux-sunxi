@@ -1533,34 +1533,27 @@ static struct video_device csi_template = {
 
 static int fetch_sensor_config(struct csi_sensor_platform_data *sensor_pdata)
 {
-	int dev_qty;
 	int ret;
-
-	/* fetch device quatity issue */
-	ret = script_parser_fetch("csi1_para","csi_dev_qty", &dev_qty , sizeof(dev_qty));
-	if (ret) {
-		csi_err("fetch csi_dev_qty from sys_config failed\n");
-	}
-
-	if(dev_qty < 1)
-		return 0;
 
 	ret = script_parser_fetch("csi0_para","csi_iovdd", (int *)&sensor_pdata->iovdd_str,
 					sizeof(sensor_pdata->iovdd_str));
 	if (ret) {
 		csi_err("fetch csi_iovdd from sys_config failed\n");
+		return ret;
 	}
 
 	ret = script_parser_fetch("csi0_para","csi_avdd", (int *)&sensor_pdata->avdd_str,
 					sizeof(sensor_pdata->avdd_str));
 	if (ret) {
 		csi_err("fetch csi_avdd from sys_config failed\n");
+		return ret;
 	}
 
 	ret = script_parser_fetch("csi0_para","csi_dvdd", (int *)&sensor_pdata->dvdd_str,
 					sizeof(sensor_pdata->dvdd_str));
 	if (ret) {
 		csi_err("fetch csi_dvdd from sys_config failed\n");
+		return ret;
 	}
 
 	csi_dbg(0, "sensor_%d_pdata\n", 0);
@@ -1571,34 +1564,27 @@ static int fetch_sensor_config(struct csi_sensor_platform_data *sensor_pdata)
 
 static int fetch_sensor_b_config(struct csi_sensor_platform_data *sensor_pdata)
 {
-	int dev_qty;
 	int ret;
-
-	/* fetch device quatity issue */
-	ret = script_parser_fetch("csi1_para","csi_dev_qty", &dev_qty , sizeof(dev_qty));
-	if (ret) {
-		csi_err("fetch csi_dev_qty from sys_config failed\n");
-	}
-
-	if(dev_qty < 1)
-		return 0;
 
 	ret = script_parser_fetch("csi0_para","csi_iovdd_b", (int *)&sensor_pdata->iovdd_str,
 					sizeof(sensor_pdata->iovdd_str));
 	if (ret) {
 		csi_err("fetch csi_iovdd_b from sys_config failed\n");
+		return ret;
 	}
 
 	ret = script_parser_fetch("csi0_para","csi_avdd_b", (int *)&sensor_pdata->avdd_str,
 					sizeof(sensor_pdata->avdd_str));
 	if (ret) {
 		csi_err("fetch csi_avdd_b from sys_config failed\n");
+		return ret;
 	}
 
 	ret = script_parser_fetch("csi0_para","csi_dvdd_b", (int *)&sensor_pdata->dvdd_str,
 					sizeof(sensor_pdata->dvdd_str));
 	if (ret) {
 		csi_err("fetch csi_dvdd_b from sys_config failed\n");
+		return ret;
 	}
 
 	csi_dbg(0, "sensor_%d_pdata\n", 0);
@@ -2192,6 +2178,8 @@ static int __init csi_init(void)
 {
 	u32 ret;
 	int csi_used;
+	int dev_qty;
+
 	csi_print("Welcome to CSI driver\n");
 	csi_print("csi_init\n");
 
@@ -2207,8 +2195,28 @@ static int __init csi_init(void)
 		return 0;
 	}
 
-	fetch_sensor_config (&sensor_0_pdata);
-	fetch_sensor_b_config (&sensor_1_pdata);
+	/* fetch device quatity issue */
+	ret = script_parser_fetch("csi0_para","csi_dev_qty", &dev_qty , sizeof(dev_qty));
+	if (ret) {
+		csi_err("fetch csi_dev_qty from sys_config failed\n");
+	}
+
+	if (dev_qty == 0) {
+		csi_err("dev_qty=0, csi camera sub-driver is not enabled!\n");
+		return -1;
+	}
+
+	ret = fetch_sensor_config (&sensor_0_pdata);
+	if (ret) {
+		return -1;
+	}
+
+	if (dev_qty > 1) {
+		ret = fetch_sensor_b_config (&sensor_1_pdata);
+		if (ret) {
+			return -1;
+		}
+	}
 
 	ret = platform_driver_register(&csi_driver);
 
