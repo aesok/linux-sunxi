@@ -1740,12 +1740,6 @@ static int fetch_config(struct csi_dev *dev)
 		if (ret) {
 			csi_err("fetch csi1 hflip from sys_config failed\n");
 		}
-
-		/* fetch flash light issue */
-		ret = script_parser_fetch("csi1_para","csi_flash_pol", &dev->ccm_cfg[0]->flash_pol , sizeof(int));
-		if (ret) {
-			csi_err("fetch csi1 csi_flash_pol from sys_config failed\n");
-		}
 	}
 
 	if(dev->dev_qty > 1)
@@ -1788,12 +1782,6 @@ static int fetch_config(struct csi_dev *dev)
 		ret = script_parser_fetch("csi1_para","csi_hflip_b", &dev->ccm_cfg[1]->hflip , sizeof(int));
 		if (ret) {
 			csi_err("fetch csi1 hflip_b from sys_config failed\n");
-		}
-
-		/* fetch flash light issue */
-		ret = script_parser_fetch("csi1_para","csi_flash_pol_b", &dev->ccm_cfg[1]->flash_pol , sizeof(int));
-		if (ret) {
-			csi_err("fetch csi1 csi_flash_pol_b from sys_config failed\n");
 		}
 	}
 
@@ -1962,19 +1950,6 @@ reg_sd:
 		if (ret < 0)
 		{
 			csi_err("Error when get ccm info,input_num = %d,use default!\n",input_num);
-		}
-
-		dev->ccm_cfg[input_num]->ccm_info.flash_pol = dev->ccm_cfg[input_num]->flash_pol;
-		if(input_num == 0) {
-			strcpy(dev->ccm_cfg[input_num]->ccm_info.stby, "csi_stby");
-			strcpy(dev->ccm_cfg[input_num]->ccm_info.power, "csi_power_en");
-			strcpy(dev->ccm_cfg[input_num]->ccm_info.reset, "csi_reset");
-			strcpy(dev->ccm_cfg[input_num]->ccm_info.flash, "csi_flash");
-		} else if(input_num == 1) {
-			strcpy(dev->ccm_cfg[input_num]->ccm_info.stby, "csi_stby_b");
-			strcpy(dev->ccm_cfg[input_num]->ccm_info.power, "csi_power_en_b");
-			strcpy(dev->ccm_cfg[input_num]->ccm_info.reset, "csi_reset_b");
-			strcpy(dev->ccm_cfg[input_num]->ccm_info.flash, "csi_flash_b");
 		}
 
 		ret = v4l2_subdev_call(dev->ccm_cfg[input_num]->sd,core,ioctl,CSI_SUBDEV_CMD_SET_INFO,&dev->ccm_cfg[input_num]->ccm_info);
