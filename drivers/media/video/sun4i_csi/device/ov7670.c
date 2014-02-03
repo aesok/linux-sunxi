@@ -1257,7 +1257,20 @@ static int ov7670_s_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *parms)
 	return ov7670_write(sd, REG_CLKRC, info->clkrc);
 }
 
+/*
+ * Implement G_MBUS_CONFIG.
+ */
+static int ov7670_g_mbus_config(struct v4l2_subdev *sd,
+				struct v4l2_mbus_config *cfg)
+{
+	cfg->type = V4L2_MBUS_PARALLEL;
+	cfg->flags = V4L2_MBUS_MASTER
+			| V4L2_MBUS_PCLK_SAMPLE_RISING
+			| V4L2_MBUS_VSYNC_ACTIVE_LOW
+			| V4L2_MBUS_HSYNC_ACTIVE_HIGH;
 
+	return 0;
+}
 
 /*
  * Code for dealing with controls.
@@ -1862,6 +1875,7 @@ static const struct v4l2_subdev_video_ops ov7670_video_ops = {
 	.s_mbus_fmt = ov7670_s_fmt,//linux-3.0
 	.s_parm = ov7670_s_parm,
 	.g_parm = ov7670_g_parm,
+	.g_mbus_config = ov7670_g_mbus_config,
 };
 
 static const struct v4l2_subdev_ops ov7670_ops = {

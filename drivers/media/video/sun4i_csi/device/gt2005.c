@@ -1800,6 +1800,20 @@ static int sensor_s_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *parms)
 	return -EINVAL;
 }
 
+/*
+ * Implement G_MBUS_CONFIG.
+ */
+static int gt2005_g_mbus_config(struct v4l2_subdev *sd,
+				struct v4l2_mbus_config *cfg)
+{
+	cfg->type = V4L2_MBUS_PARALLEL;
+	cfg->flags = V4L2_MBUS_MASTER
+			| V4L2_MBUS_PCLK_SAMPLE_RISING
+			| V4L2_MBUS_VSYNC_ACTIVE_HIGH
+			| V4L2_MBUS_HSYNC_ACTIVE_HIGH;
+
+	return 0;
+}
 
 /*
  * Code for dealing with controls.
@@ -2623,6 +2637,7 @@ static const struct v4l2_subdev_video_ops sensor_video_ops = {
 	.s_mbus_fmt = sensor_s_fmt,//linux-3.0
 	.s_parm = sensor_s_parm,//linux-3.0
 	.g_parm = sensor_g_parm,//linux-3.0
+	.g_mbus_config = gt2005_g_mbus_config,
 };
 
 static const struct v4l2_subdev_ops sensor_ops = {
