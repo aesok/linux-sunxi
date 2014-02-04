@@ -115,7 +115,7 @@ static enum sw_ic_ver magic_ver;
  * Information we maintain about a known sensor.
  */
 struct sensor_format_struct;  /* coming later */
-__csi_subdev_info_t ccm_info_con =
+static __csi_subdev_info_t ccm_info_con =
 {
 	.mclk 	= MCLK_VER_C,
 };

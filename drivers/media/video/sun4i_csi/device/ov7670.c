@@ -222,7 +222,7 @@ MODULE_PARM_DESC(debug, "Debug level (0-1)");
  * Information we maintain about a known sensor.
  */
 struct ov7670_format_struct;  /* coming later */
-__csi_subdev_info_t ccm_info_con =
+static __csi_subdev_info_t ccm_info_con =
 {
 	.mclk 	= MCLK,
 };

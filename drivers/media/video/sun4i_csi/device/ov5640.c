@@ -132,7 +132,7 @@ MODULE_PARM_DESC(debug, "Debug level (0-1)");
  */
 struct sensor_format_struct;  /* coming later */
 struct snesor_colorfx_struct; /* coming later */
-__csi_subdev_info_t ccm_info_con =
+static __csi_subdev_info_t ccm_info_con =
 {
 	.mclk 	= MCLK,
 };
