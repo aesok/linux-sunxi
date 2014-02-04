@@ -519,7 +519,7 @@ static int update_ccm_info(struct csi_dev *dev , struct ccm_config *ccm_cfg)
    dev->interface = ccm_cfg->interface;
 	 dev->vflip = ccm_cfg->vflip;
 	 dev->hflip = ccm_cfg->hflip;
-	 return v4l2_subdev_call(dev->sd,core,ioctl,CSI_SUBDEV_CMD_SET_INFO,dev->ccm_info);
+	 return 0;
 }
 
 void static inline bsp_csi_int_clear_status(struct csi_dev *dev,__csi_int_t interrupt)
@@ -1976,12 +1976,6 @@ reg_sd:
 		if (ret < 0)
 		{
 			csi_err("Error when get ccm info,input_num = %d,use default!\n",input_num);
-		}
-
-		ret = v4l2_subdev_call(dev->ccm_cfg[input_num]->sd,core,ioctl,CSI_SUBDEV_CMD_SET_INFO,&dev->ccm_cfg[input_num]->ccm_info);
-		if (ret < 0)
-		{
-			csi_err("Error when set ccm info,input_num = %d,use default!\n",input_num);
 		}
 
 		/*power issue*/

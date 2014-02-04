@@ -2173,19 +2173,6 @@ static long sensor_ioctl(struct v4l2_subdev *sd, unsigned int cmd, void *arg)
 
 			break;
 		}
-		case CSI_SUBDEV_CMD_SET_INFO:
-		{
-			struct sensor_info *info = to_state(sd);
-			__csi_subdev_info_t *ccm_info = arg;
-
-			csi_dev_dbg("CSI_SUBDEV_CMD_SET_INFO\n");
-
-			info->ccm_info->mclk 	=	ccm_info->mclk 	;
-
-			csi_dev_dbg("ccm_info.mclk=%x\n ",info->ccm_info->mclk);
-
-			break;
-		}
 		default:
 			return -EINVAL;
 	}
