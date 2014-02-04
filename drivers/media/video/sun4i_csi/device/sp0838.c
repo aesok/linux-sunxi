@@ -118,9 +118,6 @@ struct sensor_format_struct;  /* coming later */
 __csi_subdev_info_t ccm_info_con =
 {
 	.mclk 	= MCLK,
-	.vref 	= VREF_POL,
-	.href 	= HREF_POL,
-	.clock	= CLK_POL,
 };
 
 struct sensor_info {
@@ -1154,14 +1151,9 @@ static long sensor_ioctl(struct v4l2_subdev *sd, unsigned int cmd, void *arg)
 			csi_dev_dbg("CSI_SUBDEV_CMD_GET_INFO\n");
 
 			ccm_info->mclk 	=	info->ccm_info->mclk ;
-			ccm_info->vref 	=	info->ccm_info->vref ;
-			ccm_info->href 	=	info->ccm_info->href ;
-			ccm_info->clock	=	info->ccm_info->clock;
 
 			csi_dev_dbg("ccm_info.mclk=%x\n ",info->ccm_info->mclk);
-			csi_dev_dbg("ccm_info.vref=%x\n ",info->ccm_info->vref);
-			csi_dev_dbg("ccm_info.href=%x\n ",info->ccm_info->href);
-			csi_dev_dbg("ccm_info.clock=%x\n ",info->ccm_info->clock);
+
 			break;
 		}
 		case CSI_SUBDEV_CMD_SET_INFO:
@@ -1172,14 +1164,8 @@ static long sensor_ioctl(struct v4l2_subdev *sd, unsigned int cmd, void *arg)
 			csi_dev_dbg("CSI_SUBDEV_CMD_SET_INFO\n");
 
 			info->ccm_info->mclk 	=	ccm_info->mclk 	;
-			info->ccm_info->vref 	=	ccm_info->vref 	;
-			info->ccm_info->href 	=	ccm_info->href 	;
-			info->ccm_info->clock	=	ccm_info->clock	;
 
 			csi_dev_dbg("ccm_info.mclk=%x\n ",info->ccm_info->mclk);
-			csi_dev_dbg("ccm_info.vref=%x\n ",info->ccm_info->vref);
-			csi_dev_dbg("ccm_info.href=%x\n ",info->ccm_info->href);
-			csi_dev_dbg("ccm_info.clock=%x\n ",info->ccm_info->clock);
 
 			break;
 		}

@@ -873,6 +873,7 @@ static int vidioc_s_fmt_vid_cap(struct file *file, void *priv,
 	int ret,width_buf,height_buf,width_len;
 	struct v4l2_mbus_framefmt ccm_fmt;//linux-3.0
 	struct csi_fmt *csi_fmt;
+	struct v4l2_mbus_config cfg;
 
 	csi_dbg(0,"vidioc_s_fmt_vid_cap\n");
 
@@ -882,6 +883,45 @@ static int vidioc_s_fmt_vid_cap(struct file *file, void *priv,
 	}
 
 	mutex_lock(&q->vb_lock);
+
+	ret = v4l2_subdev_call(dev->sd, video, g_mbus_config, &cfg);
+	if (ret) {
+		v4l2_err(dev->sd, "v4l2 sub device g_mbus_config error!\n");
+		goto out;
+	}
+
+	if (cfg.flags & (V4L2_MBUS_HSYNC_ACTIVE_HIGH |
+			V4L2_MBUS_HSYNC_ACTIVE_LOW))
+	{
+		dev->csi_mode.href = cfg.flags & V4L2_MBUS_HSYNC_ACTIVE_HIGH ? CSI_HIGH : CSI_LOW;
+	} else {
+		ret = -EINVAL;
+	}
+
+	if (cfg.flags & (V4L2_MBUS_VSYNC_ACTIVE_HIGH |
+			V4L2_MBUS_VSYNC_ACTIVE_LOW))
+	{
+		dev->csi_mode.vref = cfg.flags & V4L2_MBUS_VSYNC_ACTIVE_HIGH ? CSI_HIGH : CSI_LOW;
+	} else {
+		ret = -EINVAL;
+	}
+
+	if (cfg.flags & (V4L2_MBUS_PCLK_SAMPLE_RISING |
+			V4L2_MBUS_PCLK_SAMPLE_FALLING))
+	{
+		dev->csi_mode.clock = cfg.flags & V4L2_MBUS_PCLK_SAMPLE_RISING ? CSI_RISING : CSI_RISING;
+	} else {
+		ret = -EINVAL;
+	}
+
+	if (!ret) {
+		v4l2_dbg(1, debug, dev->sd, "csi_mode.vref=%x\n", dev->csi_mode.vref);
+		v4l2_dbg(1, debug, dev->sd, "csi_mode.href=%x\n", dev->csi_mode.href);
+		v4l2_dbg(1, debug, dev->sd, "csi_mode.clock=%x\n", dev->csi_mode.clock);
+	} else {
+		v4l2_err(dev->sd, "g_mbus_config returns incorrect info\n");
+		goto out;
+	}
 
 	ret = vidioc_try_fmt_vid_cap(file, priv, f);
 	if (ret < 0) {
@@ -1162,14 +1202,7 @@ static int internal_s_input(struct csi_dev *dev, unsigned int i)
 	}
 
 	/* change the csi setting */
-	csi_dbg(0,"dev->ccm_info->vref = %d\n",dev->ccm_info->vref);
-	csi_dbg(0,"dev->ccm_info->href = %d\n",dev->ccm_info->href);
-	csi_dbg(0,"dev->ccm_info->clock = %d\n",dev->ccm_info->clock);
 	csi_dbg(0,"dev->ccm_info->mclk = %d\n",dev->ccm_info->mclk);
-
-	dev->csi_mode.vref       = dev->ccm_info->vref;
-  dev->csi_mode.href       = dev->ccm_info->href;
-  dev->csi_mode.clock      = dev->ccm_info->clock;
 
 //  bsp_csi_configure(dev,&dev->csi_mode);
 	csi_clk_out_set(dev);
@@ -1375,9 +1408,6 @@ static int csi_open(struct file *file)
 			csi_err("Error when set ccm info when csi open!\n");
 		}
 
-		dev->csi_mode.vref       = dev->ccm_info->vref;
-	  dev->csi_mode.href       = dev->ccm_info->href;
-	  dev->csi_mode.clock      = dev->ccm_info->clock;
 		csi_clk_out_set(dev);
 
 		ret = v4l2_subdev_call(dev->sd,core, s_power, CSI_SUBDEV_PWR_ON);
@@ -1942,9 +1972,6 @@ reg_sd:
 		}
 
 		dev->ccm_cfg[input_num]->ccm_info.mclk = CSI_OUT_RATE;
-		dev->ccm_cfg[input_num]->ccm_info.vref = CSI_LOW;
-		dev->ccm_cfg[input_num]->ccm_info.href = CSI_LOW;
-		dev->ccm_cfg[input_num]->ccm_info.clock = CSI_FALLING;
 
 		ret = v4l2_subdev_call(dev->ccm_cfg[input_num]->sd,core,ioctl,CSI_SUBDEV_CMD_GET_INFO,&dev->ccm_cfg[input_num]->ccm_info);
 		if (ret < 0)
@@ -1975,9 +2002,6 @@ reg_sd:
 	{
 		csi_dbg(0,"dev->ccm_cfg[%d]->sd = %p\n",input_num,dev->ccm_cfg[input_num]->sd);
 		csi_dbg(0,"dev->ccm_cfg[%d]->ccm_info = %p\n",input_num,&dev->ccm_cfg[input_num]->ccm_info);
-		csi_dbg(0,"dev->ccm_cfg[%d]->ccm_info.vref = %d\n",input_num,dev->ccm_cfg[input_num]->ccm_info.vref);
-		csi_dbg(0,"dev->ccm_cfg[%d]->ccm_info.href = %d\n",input_num,dev->ccm_cfg[input_num]->ccm_info.href);
-		csi_dbg(0,"dev->ccm_cfg[%d]->ccm_info.clock = %d\n",input_num,dev->ccm_cfg[input_num]->ccm_info.clock);
 		csi_dbg(0,"dev->ccm_cfg[%d]->ccm_info.mclk = %d\n",input_num,dev->ccm_cfg[input_num]->ccm_info.mclk);
 		csi_dbg(0,"dev->ccm_cfg[%d]->iovdd = %p\n",input_num,dev->ccm_cfg[input_num]->iovdd);
 		csi_dbg(0,"dev->ccm_cfg[%d]->avdd = %p\n",input_num,dev->ccm_cfg[input_num]->avdd);
