@@ -2733,15 +2733,6 @@ static struct i2c_driver sensor_driver = {
 	.remove = sensor_remove,
 	.id_table = sensor_id,
 };
-static __init int init_sensor(void)
-{
-	return i2c_add_driver(&sensor_driver);
-}
 
-static __exit void exit_sensor(void)
-{
-  i2c_del_driver(&sensor_driver);
-}
+module_i2c_driver(sensor_driver);
 
-module_init(init_sensor);
-module_exit(exit_sensor);
