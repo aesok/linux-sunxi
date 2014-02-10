@@ -308,7 +308,6 @@ struct ccm_config {
 	uint i2c_addr;
 	int vflip;
 	int hflip;
-	int stby_mode;
 	int interface;
 	__csi_subdev_info_t ccm_info;
 	struct v4l2_subdev			*sd;
