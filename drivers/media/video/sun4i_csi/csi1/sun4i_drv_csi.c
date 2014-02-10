@@ -518,14 +518,13 @@ static void inline csi_stop_generating(struct csi_dev *dev)
 	 return;
 }
 
-static int update_ccm_info(struct csi_dev *dev , struct ccm_config *ccm_cfg)
+static void update_ccm_info(struct csi_dev *dev , struct ccm_config *ccm_cfg)
 {
    dev->sd = ccm_cfg->sd;
    dev->ccm_info = &ccm_cfg->ccm_info;
    dev->interface = ccm_cfg->interface;
 	 dev->vflip = ccm_cfg->vflip;
 	 dev->hflip = ccm_cfg->hflip;
-	 return 0;
 }
 
 static irqreturn_t csi_isr(int irq, void *priv)
@@ -1194,12 +1193,7 @@ static int internal_s_input(struct csi_dev *dev, unsigned int i)
 		goto altend;
 
 	/* Alternate the device info and select target device*/
-  ret = update_ccm_info(dev, dev->ccm_cfg[i]);
-  if (ret < 0)
-	{
-		csi_err("Error when set ccm info when selecting input!,input_num = %d\n",i);
-		goto recover;
-	}
+	update_ccm_info(dev, dev->ccm_cfg[i]);
 
 	/* change the csi setting */
 	csi_dbg(0,"dev->ccm_info->mclk = %d\n",dev->ccm_info->mclk);
@@ -1248,12 +1242,7 @@ recover:
 		goto altend;
 
 	/* Alternate the device info and select the current device*/
-  ret = update_ccm_info(dev, dev->ccm_cfg[dev->input]);
-  if (ret < 0)
-	{
-		csi_err("Error when set ccm info when selecting input!\n");
-		goto altend;
-	}
+	update_ccm_info(dev, dev->ccm_cfg[dev->input]);
 
 	/*Re Initial current device*/
 	ret = v4l2_subdev_call(dev->sd,core, s_power, CSI_SUBDEV_STBY_OFF);
@@ -1402,11 +1391,7 @@ static int csi_open(struct file *file)
 	//open all the device power and set it to standby on
 	for (input_num=dev->dev_qty-1; input_num>=0; input_num--) {
 		/* update target device info and select it*/
-		ret = update_ccm_info(dev, dev->ccm_cfg[input_num]);
-		if (ret < 0)
-		{
-			csi_err("Error when set ccm info when csi open!\n");
-		}
+		update_ccm_info(dev, dev->ccm_cfg[input_num]);
 
 		csi_clk_out_set(dev);
 
@@ -1488,12 +1473,7 @@ static int csi_close(struct file *file)
 		//close all the device power
 		for (input_num=0; input_num<dev->dev_qty; input_num++) {
       /* update target device info and select it */
-      ret = update_ccm_info(dev, dev->ccm_cfg[input_num]);
-			if (ret < 0)
-			{
-				csi_err("Error when set ccm info when csi_close!\n");
-			}
-
+			update_ccm_info(dev, dev->ccm_cfg[input_num]);
 			ret = v4l2_subdev_call(dev->sd,core, s_power, CSI_SUBDEV_PWR_OFF);
 		  if (ret!=0) {
 		  	csi_err("sensor power off error at device number %d when csi open!\n",input_num);
@@ -1982,10 +1962,7 @@ reg_sd:
 
 		if(dev->stby_mode == 1) {
 			csi_print("power on and power off camera!\n");
-      ret = update_ccm_info(dev, dev->ccm_cfg[input_num]);
-      if(ret<0)
-      	csi_err("Error when set ccm info when probe!\n");
-
+			update_ccm_info(dev, dev->ccm_cfg[input_num]);
 			v4l2_subdev_call(dev->ccm_cfg[input_num]->sd,core, s_power, CSI_SUBDEV_PWR_ON);
 			v4l2_subdev_call(dev->ccm_cfg[input_num]->sd,core, s_power, CSI_SUBDEV_PWR_OFF);
 		}
@@ -2138,12 +2115,7 @@ static int csi_suspend(struct platform_device *pdev, pm_message_t state)
 			//close all the device power
 			for (input_num=0; input_num<dev->dev_qty; input_num++) {
         /* update target device info and select it */
-        ret = update_ccm_info(dev, dev->ccm_cfg[input_num]);
-        if (ret < 0)
-				{
-					csi_err("Error when set ccm info when csi_suspend!\n");
-				}
-
+				update_ccm_info(dev, dev->ccm_cfg[input_num]);
 				ret = v4l2_subdev_call(dev->sd,core, s_power, CSI_SUBDEV_PWR_OFF);
 			  if (ret!=0) {
 			  	csi_err("sensor power off error at device number %d when csi_suspend!\n",input_num);
@@ -2180,12 +2152,7 @@ static int csi_resume(struct platform_device *pdev)
 			//open all the device power
 			for (input_num=0; input_num<dev->dev_qty; input_num++) {
         /* update target device info and select it */
-        ret = update_ccm_info(dev, dev->ccm_cfg[input_num]);
-        if (ret < 0)
-				{
-					csi_err("Error when set ccm info when csi_resume!\n");
-				}
-
+				update_ccm_info(dev, dev->ccm_cfg[input_num]);
 				ret = v4l2_subdev_call(dev->sd,core, s_power, CSI_SUBDEV_PWR_ON);
 			  if (ret!=0) {
 			  	csi_err("sensor power on error at device number %d when csi_resume!\n",input_num);
@@ -2193,12 +2160,7 @@ static int csi_resume(struct platform_device *pdev)
 			}
 
 			/* update target device info and select it */
-			ret = update_ccm_info(dev, dev->ccm_cfg[0]);
-			if (ret < 0)
-			{
-				csi_err("Error when set ccm info when csi_resume!\n");
-			}
-
+			update_ccm_info(dev, dev->ccm_cfg[0]);
 			ret = v4l2_subdev_call(dev->sd,core, init,0);
 			if (ret!=0) {
 				csi_err("sensor full initial error when resume from suspend!\n");
