@@ -255,6 +255,9 @@ struct csi_sensor_platform_data {
 	/* Flash GPIO configuration*/
 	user_gpio_set_t	flash;		/* Flash pin */
 	int		flash_pol;	/* Flash pin level */
+
+	/* CSI inrerface type */
+	int interface;
 };
 
 /*
@@ -308,7 +311,6 @@ struct ccm_config {
 	uint i2c_addr;
 	int vflip;
 	int hflip;
-	int interface;
 	__csi_subdev_info_t ccm_info;
 	struct v4l2_subdev			*sd;
 };
@@ -363,7 +365,6 @@ struct csi_dev {
 	int								 stby_mode;
 
 	/* attribution */
-	int interface;
 	int vflip;
 	int hflip;
 

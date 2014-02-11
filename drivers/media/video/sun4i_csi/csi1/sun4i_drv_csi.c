@@ -281,6 +281,7 @@ static void csi_print_sensor_pdata(const struct csi_sensor_platform_data *pdata)
 	csi_dbg(0, "platform_data->iovdd_str = %s\n", pdata->iovdd_str);
 	csi_dbg(0, "platform_data->avdd_str = %s\n", pdata->avdd_str);
 	csi_dbg(0, "platform_data->dvdd_str = %s\n", pdata->dvdd_str);
+	csi_dbg(0, "platform_data->interface = %x\n", pdata->interface);
 }
 
 void static inline bsp_csi_int_clear_status(struct csi_dev *dev,__csi_int_t interrupt)
@@ -522,7 +523,6 @@ static void update_ccm_info(struct csi_dev *dev , struct ccm_config *ccm_cfg)
 {
    dev->sd = ccm_cfg->sd;
    dev->ccm_info = &ccm_cfg->ccm_info;
-   dev->interface = ccm_cfg->interface;
 	 dev->vflip = ccm_cfg->vflip;
 	 dev->hflip = ccm_cfg->hflip;
 }
@@ -1610,6 +1610,13 @@ static int fetch_sensor_config(struct csi_sensor_platform_data *sensor_pdata)
 		return ret;
 	}
 
+	/* fetch interface issue*/
+	ret = script_parser_fetch("csi1_para","csi_if", (int *)&sensor_pdata->interface , sizeof(int));
+	if (ret) {
+		csi_err("fetch csi_if from sys_config failed\n");
+		return ret;
+	}
+
 	csi_dbg(0, "sensor_%d_pdata\n", 0);
 	csi_print_sensor_pdata(sensor_pdata);
 
@@ -1682,6 +1689,13 @@ static int fetch_sensor_b_config(struct csi_sensor_platform_data *sensor_pdata)
 		return ret;
 	}
 
+	/* fetch interface issue*/
+	ret = script_parser_fetch("csi1_para","csi_if_b", (int *)&sensor_pdata->interface , sizeof(int));
+	if (ret) {
+		csi_err("fetch csi_if_b from sys_config failed\n");
+		return ret;
+	}
+
 	csi_dbg(0, "sensor_%d_pdata\n", 1);
 	csi_print_sensor_pdata(sensor_pdata);
 
@@ -1734,12 +1748,6 @@ static int fetch_config(struct csi_dev *dev)
 			}
 		}
 
-		/* fetch interface issue*/
-		ret = script_parser_fetch("csi1_para","csi_if", &dev->ccm_cfg[0]->interface , sizeof(int));
-		if (ret) {
-			csi_err("fetch csi_if from sys_config failed\n");
-		}
-
 		/* fetch flip issue */
 		ret = script_parser_fetch("csi1_para","csi_vflip", &dev->ccm_cfg[0]->vflip , sizeof(int));
 		if (ret) {
@@ -1777,12 +1785,6 @@ static int fetch_config(struct csi_dev *dev)
 			}
 		}
 
-		/* fetch interface issue*/
-		ret = script_parser_fetch("csi1_para","csi_if_b", &dev->ccm_cfg[1]->interface , sizeof(int));
-		if (ret) {
-			csi_err("fetch csi_if_b from sys_config failed\n");
-		}
-
 		/* fetch flip issue */
 		ret = script_parser_fetch("csi1_para","csi_vflip_b", &dev->ccm_cfg[1]->vflip , sizeof(int));
 		if (ret) {
@@ -1801,7 +1803,6 @@ static int fetch_config(struct csi_dev *dev)
 		csi_dbg(0,"dev->ccm_cfg[%d]->ccm = %s\n",input_num,dev->ccm_cfg[input_num]->ccm);
 		csi_dbg(0,"dev->ccm_cfg[%d]->twi_id = %x\n",input_num,dev->ccm_cfg[input_num]->twi_id);
 		csi_dbg(0,"dev->ccm_cfg[%d]->i2c_addr = %x\n",input_num,dev->ccm_cfg[input_num]->i2c_addr);
-		csi_dbg(0,"dev->ccm_cfg[%d]->interface = %x\n",input_num,dev->ccm_cfg[input_num]->interface);
 		csi_dbg(0,"dev->ccm_cfg[%d]->vflip = %x\n",input_num,dev->ccm_cfg[input_num]->vflip);
 		csi_dbg(0,"dev->ccm_cfg[%d]->hflip = %x\n",input_num,dev->ccm_cfg[input_num]->hflip);
 	}
