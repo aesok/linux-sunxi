@@ -99,14 +99,7 @@ static char ccm_b[I2C_NAME_SIZE] = "";
 static uint i2c_addr_b = 0xff;
 
 
-static struct ccm_config ccm_cfg[NUM_INPUTS] = {
-	{
-		.i2c_addr = 0xff,
-	},
-	{
-		.i2c_addr = 0xff,
-	},
-};
+static struct ccm_config ccm_cfg[NUM_INPUTS];
 
 module_param_string(ccm, ccm, sizeof(ccm), S_IRUGO|S_IWUSR);
 module_param(i2c_addr,uint, S_IRUGO|S_IWUSR);
@@ -1544,9 +1537,32 @@ static struct video_device csi_template = {
 	.release	= video_device_release,
 };
 
-static int fetch_sensor_config(struct csi_sensor_platform_data *sensor_pdata)
+static int fetch_sensor_config(struct i2c_board_info *binfo)
 {
+	struct csi_sensor_platform_data *sensor_pdata = binfo->platform_data;
 	int ret;
+
+	/* fetch i2c address and module name */
+	if((i2c_addr == 0xff) && (strlen(ccm) == 0))	/* when insmod without parm */
+	{
+		int tmp_addr;
+
+		ret = script_parser_fetch("csi1_para", "csi_twi_addr", &tmp_addr, sizeof(int));
+		binfo->addr = tmp_addr >> 1;
+		if (ret) {
+			csi_err("fetch csi_twi_addr from sys_config failed\n");
+			return ret;
+		}
+
+		ret = script_parser_fetch("csi1_para", "csi_mname", (int *)&binfo->type, sizeof(binfo->type));
+		if (ret) {
+			csi_err("fetch csi_mname from sys_config failed\n");
+			return ret;
+		}
+	} else {
+		binfo->addr = i2c_addr >> 1;
+		strlcpy(binfo->type, ccm, sizeof(binfo->type));
+	}
 
 	/* fetch power regulators configuration */
 	ret = script_parser_fetch("csi1_para","csi_iovdd", (int *)&sensor_pdata->iovdd_str,
@@ -1623,9 +1639,32 @@ static int fetch_sensor_config(struct csi_sensor_platform_data *sensor_pdata)
 	return 0;
 }
 
-static int fetch_sensor_b_config(struct csi_sensor_platform_data *sensor_pdata)
+static int fetch_sensor_b_config(struct i2c_board_info *binfo)
 {
+	struct csi_sensor_platform_data *sensor_pdata = binfo->platform_data;
 	int ret;
+
+	/* fetch i2c address and module name */
+	if((i2c_addr_b == 0xff) && (strlen(ccm_b) == 0))	/* when insmod without parm */
+	{
+		int tmp_addr;
+
+		ret = script_parser_fetch("csi1_para", "csi_twi_addr_b", &tmp_addr, sizeof(int));
+		binfo->addr = tmp_addr >> 1;
+		if (ret) {
+			csi_err("fetch csi_twi_addr_b from sys_config failed\n");
+			return ret;
+		}
+
+		ret = script_parser_fetch("csi1_para", "csi_mname_b", (int *)&binfo->type, sizeof(binfo->type));
+		if (ret) {
+			csi_err("fetch csi_mname_b from sys_config failed\n");
+			return ret;
+		}
+	} else {
+		binfo->addr = i2c_addr >> 1;
+		strlcpy(binfo->type, ccm, sizeof(binfo->type));
+	}
 
 	/* fetch power regulators configuration */
 	ret = script_parser_fetch("csi1_para","csi_iovdd_b", (int *)&sensor_pdata->iovdd_str,
@@ -1726,26 +1765,9 @@ static int fetch_config(struct csi_dev *dev)
 
 	if(dev->dev_qty > 0)
 	{
-		dev->ccm_cfg[0]->i2c_addr = i2c_addr;
-		strcpy(dev->ccm_cfg[0]->ccm,ccm);
-
 		/* fetch i2c and module name*/
 		ret = script_parser_fetch("csi1_para","csi_twi_id", &dev->ccm_cfg[0]->twi_id , sizeof(int));
 		if (ret) {
-		}
-
-		ret = strcmp(dev->ccm_cfg[0]->ccm,"");
-		if((dev->ccm_cfg[0]->i2c_addr == 0xff) && (ret == 0))	//when insmod without parm
-		{
-			ret = script_parser_fetch("csi1_para","csi_twi_addr", &dev->ccm_cfg[0]->i2c_addr , sizeof(int));
-			if (ret) {
-				csi_err("fetch csi_twi_addr from sys_config failed\n");
-			}
-
-			ret = script_parser_fetch("csi1_para","csi_mname", (int *)&dev->ccm_cfg[0]->ccm , I2C_NAME_SIZE*sizeof(char));
-			if (ret) {
-				csi_err("fetch csi_mname from sys_config failed\n");
-			}
 		}
 
 		/* fetch flip issue */
@@ -1762,27 +1784,10 @@ static int fetch_config(struct csi_dev *dev)
 
 	if(dev->dev_qty > 1)
 	{
-		dev->ccm_cfg[1]->i2c_addr = i2c_addr_b;
-		strcpy(dev->ccm_cfg[1]->ccm,ccm_b);
-
 		/* fetch i2c and module name*/
 		ret = script_parser_fetch("csi1_para","csi_twi_id_b", &dev->ccm_cfg[1]->twi_id , sizeof(int));
 		if (ret) {
 			csi_err("fetch csi_twi_id_b from sys_config failed\n");
-		}
-
-		ret = strcmp(dev->ccm_cfg[1]->ccm,"");
-		if((dev->ccm_cfg[1]->i2c_addr == 0xff) && (ret == 0))	//when insmod without parm
-		{
-			ret = script_parser_fetch("csi1_para","csi_twi_addr_b", &dev->ccm_cfg[1]->i2c_addr , sizeof(int));
-			if (ret) {
-				csi_err("fetch csi_twi_addr_b from sys_config failed\n");
-			}
-
-			ret = script_parser_fetch("csi1_para","csi_mname_b", (int *)&dev->ccm_cfg[1]->ccm , I2C_NAME_SIZE*sizeof(char));
-			if (ret) {
-				csi_err("fetch csi_mname_b from sys_config failed\n");;
-			}
 		}
 
 		/* fetch flip issue */
@@ -1800,9 +1805,7 @@ static int fetch_config(struct csi_dev *dev)
 
 	for(input_num=0; input_num<dev->dev_qty; input_num++)
 	{
-		csi_dbg(0,"dev->ccm_cfg[%d]->ccm = %s\n",input_num,dev->ccm_cfg[input_num]->ccm);
 		csi_dbg(0,"dev->ccm_cfg[%d]->twi_id = %x\n",input_num,dev->ccm_cfg[input_num]->twi_id);
-		csi_dbg(0,"dev->ccm_cfg[%d]->i2c_addr = %x\n",input_num,dev->ccm_cfg[input_num]->i2c_addr);
 		csi_dbg(0,"dev->ccm_cfg[%d]->vflip = %x\n",input_num,dev->ccm_cfg[input_num]->vflip);
 		csi_dbg(0,"dev->ccm_cfg[%d]->hflip = %x\n",input_num,dev->ccm_cfg[input_num]->hflip);
 	}
@@ -1899,27 +1902,8 @@ static int csi_probe(struct platform_device *pdev)
 	}
 
   /* v4l2 subdev register	*/
-	dev->module_flag = 0;
 	for(input_num=0; input_num<dev->dev_qty; input_num++)
 	{
-//		if(dev->module_flag)
-//			break;
-
-		if(!strcmp(dev->ccm_cfg[input_num]->ccm,""))
-			break;
-
-		if(dev->module_flag) {
-			dev->ccm_cfg[input_num]->sd = dev->ccm_cfg[input_num-1]->sd;
-			csi_dbg(0,"num = %d , sd_0 = %p,sd_1 = %p\n",input_num,dev->ccm_cfg[input_num]->sd,dev->ccm_cfg[input_num-1]->sd);
-			goto reg_sd;
-		}
-
-		if((dev->dev_qty > 1) && (input_num+1<dev->dev_qty))
-		{
-			if( (!strcmp(dev->ccm_cfg[input_num]->ccm,dev->ccm_cfg[input_num+1]->ccm)))
-				dev->module_flag = 1;
-		}
-
 		i2c_adap = i2c_get_adapter(dev->ccm_cfg[input_num]->twi_id);
 
 		if (i2c_adap == NULL) {
@@ -1935,15 +1919,8 @@ static int csi_probe(struct platform_device *pdev)
 			goto free_dev;//linux-3.0
 		}
 
-		dev_sensor[input_num].addr = (unsigned short)(dev->ccm_cfg[input_num]->i2c_addr>>1);
-		strcpy(dev_sensor[input_num].type,dev->ccm_cfg[input_num]->ccm);
-
-		dev->ccm_cfg[input_num]->sd = v4l2_i2c_new_subdev_board(&dev->v4l2_dev,
-											i2c_adap,
-											//dev_sensor[input_num].type,//linux-3.0
-											&dev_sensor[input_num],
-											NULL);
-reg_sd:
+		dev->ccm_cfg[input_num]->sd = v4l2_i2c_new_subdev_board(&dev->v4l2_dev, i2c_adap,
+									&dev_sensor[input_num], NULL);
 		if (!dev->ccm_cfg[input_num]->sd) {
 			csi_err("Error registering v4l2 subdevice,input_num = %d\n",input_num);
 			goto free_dev;
@@ -2243,13 +2220,13 @@ static int __init csi_init(void)
 		return -1;
 	}
 
-	ret = fetch_sensor_config (&sensor_0_pdata);
+	ret = fetch_sensor_config (&dev_sensor[0]);
 	if (ret) {
 		return -1;
 	}
 
 	if (dev_qty > 1) {
-		ret = fetch_sensor_b_config (&sensor_1_pdata);
+		ret = fetch_sensor_b_config (&dev_sensor[1]);
 		if (ret) {
 			return -1;
 		}

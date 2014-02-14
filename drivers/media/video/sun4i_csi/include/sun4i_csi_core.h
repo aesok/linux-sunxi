@@ -306,9 +306,7 @@ struct csi_dmaqueue {
 static LIST_HEAD(csi_devlist);
 
 struct ccm_config {
-	char ccm[I2C_NAME_SIZE];
 	int twi_id;
-	uint i2c_addr;
 	int vflip;
 	int hflip;
 	__csi_subdev_info_t ccm_info;
@@ -374,7 +372,6 @@ struct csi_dev {
 
 	/* ccm config */
   int dev_qty;
-	int module_flag;
 	__csi_subdev_info_t *ccm_info;  /*current config*/
 	struct ccm_config *ccm_cfg[MAX_NUM_INPUTS];
 };
