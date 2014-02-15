@@ -1725,7 +1725,7 @@ static int fetch_sensor_b_config(struct i2c_board_info *binfo)
 	/* fetch flash io configuration */
 	ret = script_parser_fetch("csi1_para","csi_flash_b", (int *)&sensor_pdata->flash , sizeof(user_gpio_set_t)/sizeof(int));
 	if (ret) {
-		csi_err("fetch csi_flash from sys_config failed\n");
+		csi_err("fetch csi_flash_b from sys_config failed\n");
 		return ret;
 	}
 
