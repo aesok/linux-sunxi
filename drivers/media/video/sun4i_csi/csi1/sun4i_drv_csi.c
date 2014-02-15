@@ -269,12 +269,19 @@ static struct csi_fmt *get_format(struct v4l2_format *f)
 	return &formats[k];
 };
 
-static void csi_print_sensor_pdata(const struct csi_sensor_platform_data *pdata)
+static void csi_print_sensor_i2c_board_info(const struct i2c_board_info *binfo)
 {
-	csi_dbg(0, "platform_data->iovdd_str = %s\n", pdata->iovdd_str);
-	csi_dbg(0, "platform_data->avdd_str = %s\n", pdata->avdd_str);
-	csi_dbg(0, "platform_data->dvdd_str = %s\n", pdata->dvdd_str);
-	csi_dbg(0, "platform_data->interface = %x\n", pdata->interface);
+	struct csi_sensor_platform_data *pdata = binfo->platform_data;
+
+	csi_dbg(0, "i2c_board_info:\n");
+	csi_dbg(0, "i2c_board_info->addr = %x\n", binfo->addr);
+	csi_dbg(0, "i2c_board_info->type = %s\n", binfo->type);
+	csi_dbg(0, "platform_data:\n");
+	csi_dbg(0, "csi_sensor_platform_data->iovdd_str = %s\n", pdata->iovdd_str);
+	csi_dbg(0, "csi_sensor_platform_data->avdd_str = %s\n", pdata->avdd_str);
+	csi_dbg(0, "csi_sensor_platform_data->dvdd_str = %s\n", pdata->dvdd_str);
+	csi_dbg(0, "csi_sensor_platform_data->flash_pol = %d\n", pdata->flash_pol);
+	csi_dbg(0, "csi_sensor_platform_data->interface = %d\n", pdata->interface);
 }
 
 void static inline bsp_csi_int_clear_status(struct csi_dev *dev,__csi_int_t interrupt)
@@ -1633,8 +1640,8 @@ static int fetch_sensor_config(struct i2c_board_info *binfo)
 		return ret;
 	}
 
-	csi_dbg(0, "sensor_%d_pdata\n", 0);
-	csi_print_sensor_pdata(sensor_pdata);
+	csi_dbg(0, "Sensor 0:\n");
+	csi_print_sensor_i2c_board_info(binfo);
 
 	return 0;
 }
@@ -1735,8 +1742,8 @@ static int fetch_sensor_b_config(struct i2c_board_info *binfo)
 		return ret;
 	}
 
-	csi_dbg(0, "sensor_%d_pdata\n", 1);
-	csi_print_sensor_pdata(sensor_pdata);
+	csi_dbg(0, "Sensor 1:\n");
+	csi_print_sensor_i2c_board_info(binfo);
 
 	return 0;
 }
