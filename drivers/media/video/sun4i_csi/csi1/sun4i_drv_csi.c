@@ -1752,18 +1752,6 @@ static int fetch_config(struct csi_dev *dev)
 {
 	int input_num,ret;
 
-	/* fetch device quatity issue */
-	ret = script_parser_fetch("csi1_para","csi_dev_qty", &dev->dev_qty , sizeof(int));
-	if (ret) {
-		csi_err("fetch csi_dev_qty from sys_config failed\n");
-	}
-
-	/* fetch standby mode */
-	ret = script_parser_fetch("csi1_para","csi_stby_mode", &dev->stby_mode , sizeof(int));
-	if (ret) {
-		csi_err("fetch csi_stby_mode from sys_config failed\n");
-	}
-
 	for(input_num=0; input_num<dev->dev_qty; input_num++)
 	{
 		dev->ccm_cfg[input_num] = &ccm_cfg[input_num];
@@ -1822,6 +1810,7 @@ static int fetch_config(struct csi_dev *dev)
 
 static int csi_probe(struct platform_device *pdev)
 {
+	struct csi_platform_data *csi_pdata = pdev->dev.platform_data;
 	struct csi_dev *dev;
 	struct resource *res;
 	struct video_device *vfd;
@@ -1901,6 +1890,9 @@ static int csi_probe(struct platform_device *pdev)
 	dev_set_drvdata(&(pdev)->dev, (dev));
 
 	/* fetch sys_config1 */
+
+	dev->dev_qty = csi_pdata->dev_qty;
+	dev->stby_mode = csi_pdata->stby_mode;
 
 	ret = fetch_config(dev);
 	if (ret) {
@@ -2195,11 +2187,37 @@ static struct platform_device csi_device[] = {
 	}
 };
 
+static int fetch_csi_config(struct csi_platform_data *pdata)
+{
+	int ret;
+
+	/* fetch device quatity issue */
+	ret = script_parser_fetch("csi1_para", "csi_dev_qty", &pdata->dev_qty, sizeof(int));
+	if (ret) {
+		csi_err("fetch csi_dev_qty from sys_config failed\n");
+		return ret;
+	}
+
+	/* fetch standby mode */
+	ret = script_parser_fetch("csi1_para", "csi_stby_mode", &pdata->stby_mode, sizeof(int));
+	if (ret) {
+		csi_err("fetch csi_stby_mode from sys_config failed\n");
+		return ret;
+	}
+
+	/* Dump csi_platform_data */
+	csi_dbg(0, "csi_platform_data:\n");
+	csi_dbg(0, "csi_platform_data->dev_qty = %d\n", pdata->dev_qty);
+	csi_dbg(0, "csi_platform_data->stby_mode = %d\n", pdata->stby_mode);
+
+	return 0;
+}
+
 static int __init csi_init(void)
 {
 	u32 ret;
 	int csi_used;
-	int dev_qty;
+	struct csi_platform_data pdata;
 
 	csi_print("Welcome to CSI driver\n");
 	csi_print("csi_init\n");
@@ -2216,13 +2234,12 @@ static int __init csi_init(void)
 		return 0;
 	}
 
-	/* fetch device quatity issue */
-	ret = script_parser_fetch("csi1_para","csi_dev_qty", &dev_qty , sizeof(dev_qty));
+	ret = fetch_csi_config(&pdata);
 	if (ret) {
-		csi_err("fetch csi_dev_qty from sys_config failed\n");
+		return -1;
 	}
 
-	if (dev_qty == 0) {
+	if (pdata.dev_qty == 0) {
 		csi_err("dev_qty=0, csi camera sub-driver is not enabled!\n");
 		return -1;
 	}
@@ -2232,7 +2249,7 @@ static int __init csi_init(void)
 		return -1;
 	}
 
-	if (dev_qty > 1) {
+	if (pdata.dev_qty > 1) {
 		ret = fetch_sensor_b_config (&dev_sensor[1]);
 		if (ret) {
 			return -1;
@@ -2242,6 +2259,12 @@ static int __init csi_init(void)
 	ret = platform_driver_register(&csi_driver);
 	if (ret) {
 		csi_err("platform driver register failed\n");
+		return -1;
+	}
+
+	ret = platform_device_add_data(&csi_device[0], &pdata, sizeof(pdata));
+	if (ret) {
+		csi_err("platform device add data failed\n");
 		return -1;
 	}
 

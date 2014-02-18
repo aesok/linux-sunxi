@@ -376,6 +376,11 @@ struct csi_dev {
 	struct ccm_config *ccm_cfg[MAX_NUM_INPUTS];
 };
 
+struct csi_platform_data {
+	int	dev_qty;
+	int	stby_mode;
+};
+
 void  bsp_csi_open(struct csi_dev *dev);
 void  bsp_csi_close(struct csi_dev *dev);
 void  bsp_csi_configure(struct csi_dev *dev,__csi_conf_t *mode);
