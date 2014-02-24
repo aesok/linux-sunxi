@@ -258,6 +258,10 @@ struct csi_sensor_platform_data {
 
 	/* CSI inrerface type */
 	int interface;
+
+	/* Default horizontal/vertical image flip value */
+	int inv_vflip;
+	int inv_hflip;
 };
 
 /*

@@ -282,6 +282,8 @@ static void csi_print_sensor_i2c_board_info(const struct i2c_board_info *binfo)
 	csi_dbg(0, "csi_sensor_platform_data->dvdd_str = %s\n", pdata->dvdd_str);
 	csi_dbg(0, "csi_sensor_platform_data->flash_pol = %d\n", pdata->flash_pol);
 	csi_dbg(0, "csi_sensor_platform_data->interface = %d\n", pdata->interface);
+	csi_dbg(0, "csi_sensor_platform_data->inv_vflip = %d\n", pdata->inv_vflip);
+	csi_dbg(0, "csi_sensor_platform_data->inv_hflip = %d\n", pdata->inv_hflip);
 }
 
 void static inline bsp_csi_set_buffer_address(struct csi_dev *dev,__csi_buf_t buf, u32 addr)
@@ -1641,6 +1643,19 @@ static int fetch_sensor_config(struct i2c_board_info *binfo)
 		return ret;
 	}
 
+	/* fetch flip issue */
+	ret = script_parser_fetch("csi0_para", "csi_vflip", &sensor_pdata->inv_vflip, sizeof(int));
+	if (ret) {
+		csi_err("fetch csi0 vflip from sys_config failed\n");
+		return ret;
+	}
+
+	ret = script_parser_fetch("csi0_para", "csi_hflip", &sensor_pdata->inv_hflip, sizeof(int));
+	if (ret) {
+		csi_err("fetch csi0 hflip from sys_config failed\n");
+		return ret;
+	}
+
 	csi_dbg(0, "Sensor 0:\n");
 	csi_print_sensor_i2c_board_info(binfo);
 
@@ -1740,6 +1755,19 @@ static int fetch_sensor_b_config(struct i2c_board_info *binfo)
 	ret = script_parser_fetch("csi0_para","csi_if_b", (int *)&sensor_pdata->interface , sizeof(int));
 	if (ret) {
 		csi_err("fetch csi_if_b from sys_config failed\n");
+		return ret;
+	}
+
+	/* fetch flip issue */
+	ret = script_parser_fetch("csi0_para","csi_vflip_b", &sensor_pdata->inv_vflip , sizeof(int));
+	if (ret) {
+		csi_err("fetch csi0 vflip_b from sys_config failed\n");
+		return ret;
+	}
+
+	ret = script_parser_fetch("csi0_para","csi_hflip_b", &sensor_pdata->inv_hflip , sizeof(int));
+	if (ret) {
+		csi_err("fetch csi0 hflip_b from sys_config failed\n");
 		return ret;
 	}
 
