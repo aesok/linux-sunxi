@@ -163,6 +163,10 @@ struct sensor_info {
 	/* Flash GPIO configuration*/
 	user_gpio_set_t		*flash;		/* Flash pin */
 	int			flash_pol;	/* Flash pin level */
+
+	/* Default horizontal/vertical image flip value */
+	int			inv_vflip;
+	int			inv_hflip;
 };
 
 static inline struct sensor_info *to_state(struct v4l2_subdev *sd)
@@ -3407,11 +3411,16 @@ static int sensor_probe(struct i2c_client *client,
 	info->flash = &pdata->flash;
 	info->flash_pol	= pdata->flash_pol;
 
+	info->inv_vflip = pdata->inv_vflip;
+	info->inv_hflip	= pdata->inv_hflip;
+
 	v4l2_dbg(1, debug, sd, "GPIO reset - %s\n", pdata->reset.gpio_name);
 	v4l2_dbg(1, debug, sd, "GPIO power - %s\n", pdata->power.gpio_name);
 	v4l2_dbg(1, debug, sd, "GPIO stby - %s\n", pdata->stby.gpio_name);
 	v4l2_dbg(1, debug, sd, "GPIO flash - %s\n", info->flash->gpio_name);
 	v4l2_dbg(1, debug, sd, "flash pol - %i\n", info->flash_pol);
+	v4l2_dbg(1, debug, sd, "inv_vflip - %i\n", info->inv_vflip);
+	v4l2_dbg(1, debug, sd, "inv_hflip - %i\n", info->inv_hflip);
 
 	return 0;
 
