@@ -519,8 +519,6 @@ static void update_ccm_info(struct csi_dev *dev , struct ccm_config *ccm_cfg)
 {
    dev->sd = ccm_cfg->sd;
    dev->ccm_info = &ccm_cfg->ccm_info;
-	 dev->vflip = ccm_cfg->vflip;
-	 dev->hflip = ccm_cfg->hflip;
 }
 
 void static inline bsp_csi_int_clear_status(struct csi_dev *dev,__csi_int_t interrupt)
@@ -1762,17 +1760,6 @@ static int fetch_config(struct csi_dev *dev)
 		ret = script_parser_fetch("csi0_para","csi_twi_id", &dev->ccm_cfg[0]->twi_id , sizeof(int));
 		if (ret) {
 		}
-
-		/* fetch flip issue */
-		ret = script_parser_fetch("csi0_para","csi_vflip", &dev->ccm_cfg[0]->vflip , sizeof(int));
-		if (ret) {
-			csi_err("fetch csi0 vflip from sys_config failed\n");
-		}
-
-		ret = script_parser_fetch("csi0_para","csi_hflip", &dev->ccm_cfg[0]->hflip , sizeof(int));
-		if (ret) {
-			csi_err("fetch csi0 hflip from sys_config failed\n");
-		}
 	}
 
 	if(dev->dev_qty > 1)
@@ -1782,25 +1769,12 @@ static int fetch_config(struct csi_dev *dev)
 		if (ret) {
 			csi_err("fetch csi_twi_id_b from sys_config failed\n");
 		}
-
-		/* fetch flip issue */
-		ret = script_parser_fetch("csi0_para","csi_vflip_b", &dev->ccm_cfg[1]->vflip , sizeof(int));
-		if (ret) {
-			csi_err("fetch csi0 vflip_b from sys_config failed\n");
-		}
-
-		ret = script_parser_fetch("csi0_para","csi_hflip_b", &dev->ccm_cfg[1]->hflip , sizeof(int));
-		if (ret) {
-			csi_err("fetch csi0 hflip_b from sys_config failed\n");
-		}
 	}
 
 
 	for(input_num=0; input_num<dev->dev_qty; input_num++)
 	{
 		csi_dbg(0,"dev->ccm_cfg[%d]->twi_id = %x\n",input_num,dev->ccm_cfg[input_num]->twi_id);
-		csi_dbg(0,"dev->ccm_cfg[%d]->vflip = %x\n",input_num,dev->ccm_cfg[input_num]->vflip);
-		csi_dbg(0,"dev->ccm_cfg[%d]->hflip = %x\n",input_num,dev->ccm_cfg[input_num]->hflip);
 	}
 
 	return 0;

@@ -311,8 +311,6 @@ static LIST_HEAD(csi_devlist);
 
 struct ccm_config {
 	int twi_id;
-	int vflip;
-	int hflip;
 	__csi_subdev_info_t ccm_info;
 	struct v4l2_subdev			*sd;
 };
@@ -365,10 +363,6 @@ struct csi_dev {
 	/*power issue*/
 
 	int								 stby_mode;
-
-	/* attribution */
-	int vflip;
-	int hflip;
 
 	/*parameters*/
 	__csi_conf_t			csi_mode;
