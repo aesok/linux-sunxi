@@ -1172,7 +1172,6 @@ static int vidioc_g_input(struct file *file, void *priv, unsigned int *i)
 
 static int internal_s_input(struct csi_dev *dev, unsigned int i)
 {
-	struct v4l2_control ctrl;
 	int ret;
 
 	if (i > dev->dev_qty-1) {
@@ -1212,21 +1211,6 @@ static int internal_s_input(struct csi_dev *dev, unsigned int i)
 	if (ret!=0) {
 		csi_err("sensor initial error when selecting target device!\n");
 		goto recover;
-	}
-
-	/* Set the initial flip */
-	ctrl.id = V4L2_CID_VFLIP;
-	ctrl.value = dev->vflip;
-	ret = v4l2_subdev_call(dev->sd,core, s_ctrl, &ctrl);
-	if (ret!=0) {
-		csi_err("sensor sensor_s_ctrl V4L2_CID_VFLIP error when vidioc_s_input!input_num = %d\n",i);
-	}
-
-	ctrl.id = V4L2_CID_HFLIP;
-	ctrl.value = dev->hflip;
-	ret = v4l2_subdev_call(dev->sd,core, s_ctrl, &ctrl);
-	if (ret!=0) {
-		csi_err("sensor sensor_s_ctrl V4L2_CID_HFLIP error when vidioc_s_input!input_num = %d\n",i);
 	}
 
 	dev->input = i;
@@ -1378,7 +1362,6 @@ static int csi_open(struct file *file)
 {
 	struct csi_dev *dev = video_drvdata(file);
 	int ret,input_num;
-	struct v4l2_control ctrl;
 
 	csi_dbg(0,"csi_open\n");
 
@@ -1425,20 +1408,6 @@ static int csi_open(struct file *file)
 		return ret;
 	} else {
 		csi_print("sensor initial success when csi open!\n");
-	}
-
-	ctrl.id = V4L2_CID_VFLIP;
-	ctrl.value = dev->vflip;
-	ret = v4l2_subdev_call(dev->sd,core, s_ctrl, &ctrl);
-	if (ret!=0) {
-		csi_err("sensor sensor_s_ctrl V4L2_CID_VFLIP error when csi open!\n");
-	}
-
-	ctrl.id = V4L2_CID_HFLIP;
-	ctrl.value = dev->hflip;
-	ret = v4l2_subdev_call(dev->sd,core, s_ctrl, &ctrl);
-	if (ret!=0) {
-		csi_err("sensor sensor_s_ctrl V4L2_CID_HFLIP error when csi open!\n");
 	}
 
 	dev->opened = 1;

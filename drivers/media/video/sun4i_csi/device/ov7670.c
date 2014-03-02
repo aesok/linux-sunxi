@@ -260,6 +260,7 @@ static inline struct ov7670_info *to_state(struct v4l2_subdev *sd)
 }
 
 
+static int ov7670_init_hvflip(struct v4l2_subdev *sd);
 
 /*
  * The default register settings, as obtained from OmniVision.  There
@@ -843,7 +844,11 @@ static int ov7670_init(struct v4l2_subdev *sd, u32 val)
 		csi_err("chip found is not an ov7670 chip.\n");
 		return ret;
 	}
-	return ov7670_write_array(sd, ov7670_default_regs);
+	ret = ov7670_write_array(sd, ov7670_default_regs);
+	if(ret != 0)
+		return ret;
+
+	return ov7670_init_hvflip(sd);
 }
 
 static long sensor_ioctl(struct v4l2_subdev *sd, unsigned int cmd, void *arg)
@@ -1519,6 +1524,23 @@ static int ov7670_s_vflip(struct v4l2_subdev *sd, int value)
 		v &= ~MVFP_FLIP;
 	msleep(10);  /* FIXME */
 	ret += ov7670_write(sd, REG_MVFP, v);
+	return ret;
+}
+
+/*
+ * Set the initial image flip values
+ */
+static int ov7670_init_hvflip(struct v4l2_subdev *sd)
+{
+	struct ov7670_info *info = to_state(sd);
+	int ret;
+
+	ret = ov7670_s_vflip(sd, info->inv_vflip);
+	if (ret != 0)
+		return ret;
+
+	ret = ov7670_s_hflip(sd, info->inv_hflip);
+
 	return ret;
 }
 

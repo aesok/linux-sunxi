@@ -169,6 +169,7 @@ static inline struct sensor_info *to_state(struct v4l2_subdev *sd)
 	return container_of(sd, struct sensor_info, sd);
 }
 
+static int sensor_init_hvflip(struct v4l2_subdev *sd);
 
 struct regval_list {
 	unsigned char reg_num[REG_ADDR_STEP];
@@ -1356,7 +1357,11 @@ static int sensor_init(struct v4l2_subdev *sd, u32 val)
 		return ret;
 	}
 
-	return sensor_write_array(sd, sensor_default_regs , ARRAY_SIZE(sensor_default_regs));
+	ret = sensor_write_array(sd, sensor_default_regs , ARRAY_SIZE(sensor_default_regs));
+	if(ret != 0)
+		return ret;
+
+	return sensor_init_hvflip(sd);
 }
 
 static long sensor_ioctl(struct v4l2_subdev *sd, unsigned int cmd, void *arg)
@@ -1938,6 +1943,23 @@ static int sensor_s_vflip(struct v4l2_subdev *sd, int value)
 	msleep(100);
 	info->vflip = value;
 	return 0;
+}
+
+/*
+ * Set the initial image flip values
+ */
+static int sensor_init_hvflip(struct v4l2_subdev *sd)
+{
+	struct sensor_info *info = to_state(sd);
+	int ret;
+
+	ret = sensor_s_vflip(sd, info->inv_vflip);
+	if (ret != 0)
+		return ret;
+
+	ret = sensor_s_hflip(sd, info->inv_hflip);
+
+	return ret;
 }
 
 static int sensor_g_autogain(struct v4l2_subdev *sd, __s32 *value)
