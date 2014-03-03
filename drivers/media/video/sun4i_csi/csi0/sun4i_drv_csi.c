@@ -1744,19 +1744,6 @@ static int fetch_sensor_b_config(struct i2c_board_info *binfo)
 	return 0;
 }
 
-static int fetch_config(struct csi_dev *dev)
-{
-	int input_num;
-
-	for(input_num=0; input_num<dev->dev_qty; input_num++)
-	{
-		dev->ccm_cfg[input_num] = &ccm_cfg[input_num];
-		csi_dbg(0,"dev->ccm_cfg[%d] = %p\n",input_num,dev->ccm_cfg[input_num]);
-	}
-
-	return 0;
-}
-
 static int csi_probe(struct platform_device *pdev)
 {
 	struct csi_platform_data *csi_pdata = pdev->dev.platform_data;
@@ -1837,16 +1824,11 @@ static int csi_probe(struct platform_device *pdev)
 
 	dev_set_drvdata(&(pdev)->dev, (dev));
 
-	/* fetch sys_config1 */
-
 	dev->dev_qty = csi_pdata->dev_qty;
 	dev->stby_mode = csi_pdata->stby_mode;
 
-	ret = fetch_config(dev);
-	if (ret) {
-		csi_err("Error at fetch_config\n");
-		goto err_irq;
-	}
+	dev->ccm_cfg[0] = &ccm_cfg[0];
+	dev->ccm_cfg[1] = &ccm_cfg[1];
 
   /* v4l2 subdev register	*/
 	for(input_num=0; input_num<dev->dev_qty; input_num++)
