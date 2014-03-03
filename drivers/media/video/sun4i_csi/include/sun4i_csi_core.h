@@ -310,7 +310,6 @@ struct csi_dmaqueue {
 static LIST_HEAD(csi_devlist);
 
 struct ccm_config {
-	int twi_id;
 	__csi_subdev_info_t ccm_info;
 	struct v4l2_subdev			*sd;
 };
@@ -377,6 +376,8 @@ struct csi_dev {
 struct csi_platform_data {
 	int	dev_qty;
 	int	stby_mode;
+
+	int	i2c_adapter_id[MAX_NUM_INPUTS];
 };
 
 void  bsp_csi_open(struct csi_dev *dev);

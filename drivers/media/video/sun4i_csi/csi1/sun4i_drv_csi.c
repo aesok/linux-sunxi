@@ -1745,35 +1745,12 @@ static int fetch_sensor_b_config(struct i2c_board_info *binfo)
 
 static int fetch_config(struct csi_dev *dev)
 {
-	int input_num,ret;
+	int input_num;
 
 	for(input_num=0; input_num<dev->dev_qty; input_num++)
 	{
 		dev->ccm_cfg[input_num] = &ccm_cfg[input_num];
 		csi_dbg(0,"dev->ccm_cfg[%d] = %p\n",input_num,dev->ccm_cfg[input_num]);
-	}
-
-	if(dev->dev_qty > 0)
-	{
-		/* fetch i2c and module name*/
-		ret = script_parser_fetch("csi1_para","csi_twi_id", &dev->ccm_cfg[0]->twi_id , sizeof(int));
-		if (ret) {
-		}
-	}
-
-	if(dev->dev_qty > 1)
-	{
-		/* fetch i2c and module name*/
-		ret = script_parser_fetch("csi1_para","csi_twi_id_b", &dev->ccm_cfg[1]->twi_id , sizeof(int));
-		if (ret) {
-			csi_err("fetch csi_twi_id_b from sys_config failed\n");
-		}
-	}
-
-
-	for(input_num=0; input_num<dev->dev_qty; input_num++)
-	{
-		csi_dbg(0,"dev->ccm_cfg[%d]->twi_id = %x\n",input_num,dev->ccm_cfg[input_num]->twi_id);
 	}
 
 	return 0;
@@ -1874,7 +1851,7 @@ static int csi_probe(struct platform_device *pdev)
   /* v4l2 subdev register	*/
 	for(input_num=0; input_num<dev->dev_qty; input_num++)
 	{
-		i2c_adap = i2c_get_adapter(dev->ccm_cfg[input_num]->twi_id);
+		i2c_adap = i2c_get_adapter(csi_pdata->i2c_adapter_id[input_num]);
 
 		if (i2c_adap == NULL) {
 			csi_err("request i2c adapter failed,input_num = %d\n",input_num);
@@ -2176,10 +2153,31 @@ static int fetch_csi_config(struct csi_platform_data *pdata)
 		return ret;
 	}
 
+	pdata->i2c_adapter_id[0] = 0;
+	pdata->i2c_adapter_id[1] = 0;
+
+	if (pdata->dev_qty > 0) {
+		ret = script_parser_fetch("csi1_para", "csi_twi_id", &pdata->i2c_adapter_id[0], sizeof(int));
+		if (ret) {
+			csi_err("fetch csi_twi_id from sys_config failed\n");
+			return ret;
+		}
+	}
+
+	if (pdata->dev_qty > 1) {
+		ret = script_parser_fetch("csi1_para", "csi_twi_id_b", &pdata->i2c_adapter_id[1], sizeof(int));
+		if (ret) {
+			csi_err("fetch csi_twi_id_b from sys_config failed\n");
+			return ret;
+		}
+	}
+
 	/* Dump csi_platform_data */
 	csi_dbg(0, "csi_platform_data:\n");
 	csi_dbg(0, "csi_platform_data->dev_qty = %d\n", pdata->dev_qty);
 	csi_dbg(0, "csi_platform_data->stby_mode = %d\n", pdata->stby_mode);
+	csi_dbg(0, "csi_platform_data->i2c_adapter_id[0] = %d\n", pdata->i2c_adapter_id[0]);
+	csi_dbg(0, "csi_platform_data->i2c_adapter_id[1] = %d\n", pdata->i2c_adapter_id[1]);
 
 	return 0;
 }
