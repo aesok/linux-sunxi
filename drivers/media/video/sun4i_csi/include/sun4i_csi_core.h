@@ -370,7 +370,7 @@ struct csi_dev {
 	/* ccm config */
   int dev_qty;
 	__csi_subdev_info_t *ccm_info;  /*current config*/
-	struct ccm_config *ccm_cfg[MAX_NUM_INPUTS];
+	struct ccm_config ccm_cfg[MAX_NUM_INPUTS];
 };
 
 struct csi_platform_data {
