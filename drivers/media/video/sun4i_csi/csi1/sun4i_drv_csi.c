@@ -911,9 +911,9 @@ static int vidioc_s_fmt_vid_cap(struct file *file, void *priv,
 	}
 
 	if (!ret) {
-		v4l2_dbg(1, debug, dev->sd, "csi_mode.vref=%x\n", dev->csi_mode.vref);
-		v4l2_dbg(1, debug, dev->sd, "csi_mode.href=%x\n", dev->csi_mode.href);
-		v4l2_dbg(1, debug, dev->sd, "csi_mode.clock=%x\n", dev->csi_mode.clock);
+		v4l2_dbg(1, debug, &dev->v4l2_dev, "csi_mode.vref=%x\n", dev->csi_mode.vref);
+		v4l2_dbg(1, debug, &dev->v4l2_dev, "csi_mode.href=%x\n", dev->csi_mode.href);
+		v4l2_dbg(1, debug, &dev->v4l2_dev, "csi_mode.clock=%x\n", dev->csi_mode.clock);
 	} else {
 		v4l2_err(dev->sd, "g_mbus_config returns incorrect info\n");
 		goto out;
