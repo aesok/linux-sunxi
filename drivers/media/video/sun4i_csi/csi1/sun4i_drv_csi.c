@@ -1835,13 +1835,6 @@ static int csi_probe(struct platform_device *pdev)
 			goto free_dev;//linux-3.0
 		}
 
-		dev->ccm_cfg[input_num].sd = kmalloc(sizeof(struct v4l2_subdev *),GFP_KERNEL);
-		if (dev->ccm_cfg[input_num].sd == NULL) {
-			csi_err("unable to allocate memory for subdevice pointers,input_num = %d\n",input_num);
-			ret = -ENOMEM;
-			goto free_dev;//linux-3.0
-		}
-
 		dev->ccm_cfg[input_num].sd = v4l2_i2c_new_subdev_board(&dev->v4l2_dev, i2c_adap,
 									&dev_sensor[input_num], NULL);
 		if (!dev->ccm_cfg[input_num].sd) {
