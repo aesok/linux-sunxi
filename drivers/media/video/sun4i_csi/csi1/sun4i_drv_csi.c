@@ -372,7 +372,7 @@ static int csi_clk_get(struct csi_dev *dev)
 		return -1;
     }
 
-	if(dev->ccm_info->mclk==24000000 || dev->ccm_info->mclk==12000000)
+	if(dev->mclk==24000000 || dev->mclk==12000000)
 	{
 		dev->csi_clk_src=clk_get(NULL,"hosc");
 		if (dev->csi_clk_src == NULL) {
@@ -403,7 +403,7 @@ static int csi_clk_get(struct csi_dev *dev)
 
 	clk_put(dev->csi_clk_src);
 
-	ret = clk_set_rate(dev->csi_module_clk,dev->ccm_info->mclk);
+	ret = clk_set_rate(dev->csi_module_clk, dev->mclk);
 	if (ret == -1) {
         csi_err("set csi1 module clock error\n");
 		return -1;
@@ -447,7 +447,7 @@ static int csi_clk_get(struct csi_dev *dev)
 static int csi_clk_out_set(struct csi_dev *dev)
 {
 	int ret;
-	ret = clk_set_rate(dev->csi_module_clk, dev->ccm_info->mclk);
+	ret = clk_set_rate(dev->csi_module_clk, dev->mclk);
 	if (ret == -1) {
 		csi_err("set csi1 module clock error\n");
 		return -1;
@@ -521,7 +521,7 @@ static void inline csi_stop_generating(struct csi_dev *dev)
 static void update_ccm_info(struct csi_dev *dev , struct ccm_config *ccm_cfg)
 {
    dev->sd = ccm_cfg->sd;
-   dev->ccm_info = &ccm_cfg->ccm_info;
+	dev->mclk = ccm_cfg->mclk;
 }
 
 static irqreturn_t csi_isr(int irq, void *priv)
@@ -1192,7 +1192,7 @@ static int internal_s_input(struct csi_dev *dev, unsigned int i)
 	update_ccm_info(dev, &dev->ccm_cfg[i]);
 
 	/* change the csi setting */
-	csi_dbg(0,"dev->ccm_info->mclk = %d\n",dev->ccm_info->mclk);
+	v4l2_dbg(1, debug, &dev->v4l2_dev, "dev->mclk = %d\n", dev->mclk);
 
 //  bsp_csi_configure(dev,&dev->csi_mode);
 	csi_clk_out_set(dev);
@@ -1827,6 +1827,8 @@ static int csi_probe(struct platform_device *pdev)
   /* v4l2 subdev register	*/
 	for(input_num=0; input_num<dev->dev_qty; input_num++)
 	{
+		__csi_subdev_info_t ccm_info;
+
 		i2c_adap = i2c_get_adapter(csi_pdata->i2c_adapter_id[input_num]);
 
 		if (i2c_adap == NULL) {
@@ -1844,13 +1846,15 @@ static int csi_probe(struct platform_device *pdev)
 			csi_print("registered sub device,input_num = %d\n",input_num);
 		}
 
-		dev->ccm_cfg[input_num].ccm_info.mclk = CSI_OUT_RATE;
+		ccm_info.mclk = CSI_OUT_RATE;
 
-		ret = v4l2_subdev_call(dev->ccm_cfg[input_num].sd,core,ioctl,CSI_SUBDEV_CMD_GET_INFO,&dev->ccm_cfg[input_num].ccm_info);
+		ret = v4l2_subdev_call(dev->ccm_cfg[input_num].sd,core,ioctl,CSI_SUBDEV_CMD_GET_INFO,&ccm_info);
 		if (ret < 0)
 		{
 			csi_err("Error when get ccm info,input_num = %d,use default!\n",input_num);
 		}
+
+		dev->ccm_cfg[input_num].mclk = ccm_info.mclk;
 
 		/*power issue*/
 
@@ -1864,9 +1868,8 @@ static int csi_probe(struct platform_device *pdev)
 
 	for(input_num=0; input_num<dev->dev_qty; input_num++)
 	{
-		csi_dbg(0,"dev->ccm_cfg[%d].sd = %p\n",input_num,dev->ccm_cfg[input_num].sd);
-		csi_dbg(0,"dev->ccm_cfg[%d].ccm_info = %p\n",input_num,&dev->ccm_cfg[input_num].ccm_info);
-		csi_dbg(0,"dev->ccm_cfg[%d].ccm_info.mclk = %d\n",input_num,dev->ccm_cfg[input_num].ccm_info.mclk);
+		v4l2_dbg(1, debug, &dev->v4l2_dev, "dev->ccm_cfg[%d].sd = %p\n", input_num, dev->ccm_cfg[input_num].sd);
+		v4l2_dbg(1, debug, &dev->v4l2_dev, "dev->ccm_cfg[%d].mclk = %d\n", input_num, dev->ccm_cfg[input_num].mclk);
 	}
 
 	update_ccm_info(dev, &dev->ccm_cfg[0]);

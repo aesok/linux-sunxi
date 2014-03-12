@@ -310,8 +310,8 @@ struct csi_dmaqueue {
 static LIST_HEAD(csi_devlist);
 
 struct ccm_config {
-	__csi_subdev_info_t ccm_info;
 	struct v4l2_subdev			*sd;
+	int					mclk;
 };
 
 struct csi_dev {
@@ -369,7 +369,7 @@ struct csi_dev {
 
 	/* ccm config */
   int dev_qty;
-	__csi_subdev_info_t *ccm_info;  /*current config*/
+	int				mclk;
 	struct ccm_config ccm_cfg[MAX_NUM_INPUTS];
 };
 
