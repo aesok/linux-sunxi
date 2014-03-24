@@ -320,8 +320,6 @@ struct csi_dev {
 	struct v4l2_subdev			*sd;
 	struct platform_device	*pdev;
 
-	int						id;
-
 	spinlock_t              slock;
 
 	/* various device info */

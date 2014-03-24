@@ -1758,7 +1758,7 @@ static int csi_probe(struct platform_device *pdev)
 		csi_err("request dev mem failed!\n");
 		return -ENOMEM;
 	}
-	dev->id = pdev->id;
+
 	dev->pdev = pdev;
 
 	spin_lock_init(&dev->slock);
@@ -1880,8 +1880,6 @@ static int csi_probe(struct platform_device *pdev)
 		ret = -ENXIO;
 		goto unreg_dev;
 	}
-
-//	csi_dbg("%s(): csi-%d registered successfully\n",__func__, dev->id);
 
 	/*video device register	*/
 	ret = -ENOMEM;
