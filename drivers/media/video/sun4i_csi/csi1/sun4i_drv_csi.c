@@ -1752,10 +1752,9 @@ static int csi_probe(struct platform_device *pdev)
 
 	csi_dbg(0,"csi_probe\n");
 
-	/*request mem for dev*/
-	dev = kzalloc(sizeof(struct csi_dev), GFP_KERNEL);
+	dev = devm_kzalloc(&pdev->dev, sizeof(*dev), GFP_KERNEL);
 	if (!dev) {
-		csi_err("request dev mem failed!\n");
+		dev_err(&pdev->dev, "Could not allocate dev\n");
 		return -ENOMEM;
 	}
 
@@ -1928,7 +1927,6 @@ err_clk:
 unreg_dev:
 	v4l2_device_unregister(&dev->v4l2_dev);
 free_dev:
-//	kfree(dev);
 err_irq:
 	free_irq(dev->irq, dev);
 err_regs_unmap:
@@ -1937,7 +1935,6 @@ err_req_region:
 	release_resource(dev->regs_res);
 	kfree(dev->regs_res);
 err_info:
-	kfree(dev);
 	csi_err("failed to install\n");
 
 	return ret;
@@ -1966,7 +1963,6 @@ static int csi_release(void)
 		iounmap(dev->regs);
 		release_resource(dev->regs_res);
 		kfree(dev->regs_res);
-		kfree(dev);
 	}
 
 	csi_print("csi_release ok!\n");
@@ -1987,7 +1983,6 @@ static int __devexit csi_remove(struct platform_device *pdev)
 //	iounmap(dev->regs);
 //	release_resource(dev->regs_res);
 //	kfree(dev->regs_res);
-//	kfree(dev);
 	csi_print("csi_remove ok!\n");
 	return 0;
 }
