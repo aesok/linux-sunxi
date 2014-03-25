@@ -1746,12 +1746,20 @@ static int csi_probe(struct platform_device *pdev)
 	struct csi_platform_data *csi_pdata = pdev->dev.platform_data;
 	struct csi_dev *dev;
 	struct resource *res;
+	int irq;
 	struct video_device *vfd;
 	struct i2c_adapter *i2c_adap;
 	int ret = 0;
 	int input_num;
 
 	csi_dbg(0,"csi_probe\n");
+
+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+	irq = platform_get_irq(pdev, 0);
+	if (!res || irq <= 0) {
+		dev_err(&pdev->dev, "Not enough CSI platform resources.\n");
+		return -ENODEV;
+	}
 
 	dev = devm_kzalloc(&pdev->dev, sizeof(*dev), GFP_KERNEL);
 	if (!dev) {
@@ -1762,13 +1770,6 @@ static int csi_probe(struct platform_device *pdev)
 	dev->pdev = pdev;
 
 	spin_lock_init(&dev->slock);
-
-	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-	if (!res) {
-		csi_err("failed to find the registers\n");
-		ret = -ENOENT;
-		goto err_info;
-	}
 
 	dev->regs_res = request_mem_region(res->start, resource_size(res),
 			dev_name(&pdev->dev));
@@ -1787,15 +1788,7 @@ static int csi_probe(struct platform_device *pdev)
 
 
   /*get irq resource*/
-
-	res = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
-	if (!res) {
-		csi_err("failed to get IRQ resource\n");
-		ret = -ENXIO;
-		goto err_regs_unmap;
-	}
-
-	dev->irq = res->start;
+	dev->irq = irq;
 
 	ret = request_irq(dev->irq, csi_isr, 0, pdev->name, dev);
 	if (ret) {
@@ -1933,7 +1926,7 @@ unreg_dev:
 free_dev:
 err_irq:
 	free_irq(dev->irq, dev);
-err_regs_unmap:
+
 	iounmap(dev->regs);
 err_req_region:
 	release_resource(dev->regs_res);
