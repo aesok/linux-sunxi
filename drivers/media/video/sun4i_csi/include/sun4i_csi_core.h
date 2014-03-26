@@ -353,7 +353,6 @@ struct csi_dev {
 	struct clk				*csi_dram_clk;
 	struct clk				*csi_isp_src_clk;
 	struct clk				*csi_isp_clk;
-	int						irq;
 	void __iomem			*regs;
 
 	/*power issue*/

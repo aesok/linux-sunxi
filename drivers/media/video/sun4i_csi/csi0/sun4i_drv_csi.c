@@ -1775,13 +1775,11 @@ static int csi_probe(struct platform_device *pdev)
 	if (!dev->regs)
 		return -EADDRNOTAVAIL;
 
-  /*get irq resource*/
-	dev->irq = irq;
-
-	ret = request_irq(dev->irq, csi_isr, 0, pdev->name, dev);
+	ret = devm_request_irq(&pdev->dev, irq, csi_isr, 0,
+				dev_name(&pdev->dev), dev);
 	if (ret) {
-		csi_err("failed to install irq (%d)\n", ret);
-		goto err_clk;
+		dev_err(&pdev->dev, "cannot claim IRQ %d\n", ret);
+		return ret;
 	}
 
     /*pin resource*/
@@ -1913,7 +1911,6 @@ unreg_dev:
 	v4l2_device_unregister(&dev->v4l2_dev);
 free_dev:
 err_irq:
-	free_irq(dev->irq, dev);
 
 	return ret;
 }
@@ -1938,7 +1935,6 @@ static int csi_release(void)
 		video_unregister_device(dev->vfd);
 		csi_clk_release(dev);
 		v4l2_device_unregister(&dev->v4l2_dev);
-		free_irq(dev->irq, dev);
 	}
 
 	csi_print("csi_release ok!\n");
@@ -1954,8 +1950,7 @@ static int __devexit csi_remove(struct platform_device *pdev)
 
 //	video_device_release(vfd);
 //	csi_clk_release(dev);
-//	free_irq(dev->irq, dev);
-//
+
 	csi_print("csi_remove ok!\n");
 	return 0;
 }
