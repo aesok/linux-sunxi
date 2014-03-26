@@ -1771,21 +1771,9 @@ static int csi_probe(struct platform_device *pdev)
 
 	spin_lock_init(&dev->slock);
 
-	dev->regs_res = request_mem_region(res->start, resource_size(res),
-			dev_name(&pdev->dev));
-	if (!dev->regs_res) {
-		csi_err("failed to obtain register region\n");
-		ret = -ENOENT;
-		goto err_info;
-	}
-
-	dev->regs = ioremap(res->start, resource_size(res));
-	if (!dev->regs) {
-		csi_err("failed to map registers\n");
-		ret = -ENXIO;
-		goto err_req_region;
-	}
-
+	dev->regs = devm_request_and_ioremap(&pdev->dev, res);
+	if (!dev->regs)
+		return -EADDRNOTAVAIL;
 
   /*get irq resource*/
 	dev->irq = irq;
@@ -1927,13 +1915,6 @@ free_dev:
 err_irq:
 	free_irq(dev->irq, dev);
 
-	iounmap(dev->regs);
-err_req_region:
-	release_resource(dev->regs_res);
-	kfree(dev->regs_res);
-err_info:
-	csi_err("failed to install\n");
-
 	return ret;
 }
 
@@ -1958,9 +1939,6 @@ static int csi_release(void)
 		csi_clk_release(dev);
 		v4l2_device_unregister(&dev->v4l2_dev);
 		free_irq(dev->irq, dev);
-		iounmap(dev->regs);
-		release_resource(dev->regs_res);
-		kfree(dev->regs_res);
 	}
 
 	csi_print("csi_release ok!\n");
@@ -1978,9 +1956,6 @@ static int __devexit csi_remove(struct platform_device *pdev)
 //	csi_clk_release(dev);
 //	free_irq(dev->irq, dev);
 //
-//	iounmap(dev->regs);
-//	release_resource(dev->regs_res);
-//	kfree(dev->regs_res);
 	csi_print("csi_remove ok!\n");
 	return 0;
 }
