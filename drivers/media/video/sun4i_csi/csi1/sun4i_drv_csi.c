@@ -368,46 +368,45 @@ static int csi_clk_get(struct csi_dev *dev)
 
 	dev->csi_ahb_clk=clk_get(NULL, "ahb_csi1");
 	if (dev->csi_ahb_clk == NULL) {
-       	csi_err("get csi1 ahb clk error!\n");
+		csi_err("get csi1 ahb clk error!\n");
 		return -1;
-    }
+	}
 
-	if(dev->mclk==24000000 || dev->mclk==12000000)
-	{
+	if(dev->mclk==24000000 || dev->mclk==12000000) {
 		dev->csi_clk_src=clk_get(NULL,"hosc");
 		if (dev->csi_clk_src == NULL) {
-       	csi_err("get csi1 hosc source clk error!\n");
+			csi_err("get csi1 hosc source clk error!\n");
 			return -1;
-    }
-  }
-  else
-  {
+		}
+	}
+	else
+	{
 		dev->csi_clk_src=clk_get(NULL,"video_pll1");
 		if (dev->csi_clk_src == NULL) {
-       	csi_err("get csi1 video pll1 source clk error!\n");
+			csi_err("get csi1 video pll1 source clk error!\n");
 			return -1;
-    }
+		}
 	}
 
 	dev->csi_module_clk=clk_get(NULL,"csi1");
 	if(dev->csi_module_clk == NULL) {
-       	csi_err("get csi1 module clk error!\n");
+		csi_err("get csi1 module clk error!\n");
 		return -1;
-    }
+	}
 
 	ret = clk_set_parent(dev->csi_module_clk, dev->csi_clk_src);
 	if (ret == -1) {
-        csi_err(" csi set parent failed \n");
-	    return -1;
-    }
+		csi_err(" csi set parent failed \n");
+		return -1;
+	}
 
 	clk_put(dev->csi_clk_src);
 
 	ret = clk_set_rate(dev->csi_module_clk, dev->mclk);
 	if (ret == -1) {
-        csi_err("set csi1 module clock error\n");
+		csi_err("set csi1 module clock error\n");
 		return -1;
-   	}
+	}
 
 //	dev->csi_isp_src_clk=clk_get(NULL,"video_pll0");
 //	if (dev->csi_isp_src_clk == NULL) {
@@ -437,9 +436,9 @@ static int csi_clk_get(struct csi_dev *dev)
 
 	dev->csi_dram_clk = clk_get(NULL, "sdram_csi1");
 	if (dev->csi_dram_clk == NULL) {
-       	csi_err("get csi1 dram clk error!\n");
+		csi_err("get csi1 dram clk error!\n");
 		return -1;
-    }
+	}
 
 	return 0;
 }
