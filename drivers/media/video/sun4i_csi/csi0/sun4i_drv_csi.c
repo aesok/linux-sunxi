@@ -1625,6 +1625,9 @@ static int fetch_sensor_config(struct i2c_board_info *binfo)
 		return ret;
 	}
 
+	/* TODO: Add mclk parameter to FEX file */
+	sensor_pdata->mclk = 27 * 1000 * 1000; /* ov7670 MCLK */
+
 	csi_dbg(0, "Sensor 0:\n");
 	csi_print_sensor_i2c_board_info(binfo);
 
@@ -1740,6 +1743,9 @@ static int fetch_sensor_b_config(struct i2c_board_info *binfo)
 		return ret;
 	}
 
+	/* TODO: Add mclk parameter to FEX file */
+	sensor_pdata->mclk = 27 * 1000 * 1000; /* ov7670 MCLK */
+
 	csi_dbg(0, "Sensor 1:\n");
 	csi_print_sensor_i2c_board_info(binfo);
 
@@ -1749,6 +1755,7 @@ static int fetch_sensor_b_config(struct i2c_board_info *binfo)
 static int csi_probe(struct platform_device *pdev)
 {
 	struct csi_platform_data *csi_pdata = pdev->dev.platform_data;
+	struct csi_sensor_platform_data *sensor_pdata;
 	struct csi_dev *dev;
 	struct resource *res;
 	int irq;
@@ -1811,7 +1818,7 @@ static int csi_probe(struct platform_device *pdev)
   /* v4l2 subdev register	*/
 	for(input_num=0; input_num<dev->dev_qty; input_num++)
 	{
-		__csi_subdev_info_t ccm_info;
+		sensor_pdata = dev_sensor[input_num].platform_data;
 
 		i2c_adap = i2c_get_adapter(csi_pdata->i2c_adapter_id[input_num]);
 
@@ -1833,15 +1840,7 @@ static int csi_probe(struct platform_device *pdev)
 			csi_print("registered sub device,input_num = %d\n",input_num);
 		}
 
-		ccm_info.mclk = CSI_OUT_RATE;
-
-		ret = v4l2_subdev_call(dev->ccm_cfg[input_num].sd,core,ioctl,CSI_SUBDEV_CMD_GET_INFO,&ccm_info);
-		if (ret < 0)
-		{
-			csi_err("Error when get ccm info,input_num = %d,use default!\n",input_num);
-		}
-
-		dev->ccm_cfg[input_num].mclk = ccm_info.mclk;
+		dev->ccm_cfg[input_num].mclk =  sensor_pdata->mclk;
 
 		/*power issue*/
 
