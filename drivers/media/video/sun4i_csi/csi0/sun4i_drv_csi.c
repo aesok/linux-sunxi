@@ -107,12 +107,16 @@ static struct csi_sensor_platform_data sensor_0_pdata = {
 	.iovdd_str = "",
 	.avdd_str = "",
 	.dvdd_str = "",
+	/* TODO: Add mclk parameter to FEX file */
+	.mclk = CSI_OUT_RATE,
 };
 
 static struct csi_sensor_platform_data sensor_1_pdata = {
 	.iovdd_str = "",
 	.avdd_str = "",
 	.dvdd_str = "",
+	/* TODO: Add mclk parameter to FEX file */
+	.mclk = CSI_OUT_RATE,
 };
 
 static struct i2c_board_info  dev_sensor[] =  {
@@ -281,6 +285,7 @@ static void csi_print_sensor_i2c_board_info(const struct i2c_board_info *binfo)
 	csi_dbg(0, "csi_sensor_platform_data->interface = %d\n", pdata->interface);
 	csi_dbg(0, "csi_sensor_platform_data->inv_vflip = %d\n", pdata->inv_vflip);
 	csi_dbg(0, "csi_sensor_platform_data->inv_hflip = %d\n", pdata->inv_hflip);
+	csi_dbg(0, "csi_sensor_platform_data->mclk = %d\n", pdata->mclk);
 }
 
 void static inline bsp_csi_set_buffer_address(struct csi_dev *dev,__csi_buf_t buf, u32 addr)

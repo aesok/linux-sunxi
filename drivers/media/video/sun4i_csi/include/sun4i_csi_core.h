@@ -256,6 +256,9 @@ struct csi_sensor_platform_data {
 	user_gpio_set_t	flash;		/* Flash pin */
 	int		flash_pol;	/* Flash pin level */
 
+	/* MCLK frequncy (Hz) */
+	int		mclk;
+
 	/* CSI inrerface type */
 	int interface;
 
