@@ -222,14 +222,11 @@ MODULE_PARM_DESC(debug, "Debug level (0-1)");
  * Information we maintain about a known sensor.
  */
 struct ov7670_format_struct;  /* coming later */
-static __csi_subdev_info_t ccm_info_con =
-{
-	.mclk 	= MCLK,
-};
+
 struct ov7670_info {
 	struct v4l2_subdev sd;
 	struct ov7670_format_struct *fmt;  /* Current format */
-	__csi_subdev_info_t *ccm_info;
+
 	unsigned char sat;		/* Saturation value */
 	int hue;			/* Hue value */
 	enum v4l2_flash_mode flash_mode;
@@ -850,32 +847,6 @@ static int ov7670_init(struct v4l2_subdev *sd, u32 val)
 
 	return ov7670_init_hvflip(sd);
 }
-
-static long sensor_ioctl(struct v4l2_subdev *sd, unsigned int cmd, void *arg)
-{
-	int ret=0;
-
-	switch(cmd){
-		case CSI_SUBDEV_CMD_GET_INFO:
-		{
-			struct ov7670_info *info = to_state(sd);
-			__csi_subdev_info_t *ccm_info = arg;
-
-			csi_dev_dbg("CSI_SUBDEV_CMD_GET_INFO\n");
-
-			ccm_info->mclk 	=	info->ccm_info->mclk ;
-
-			csi_dev_dbg("ccm_info.mclk=%x\n ",info->ccm_info->mclk);
-			break;
-		}
-		default:
-			return -EINVAL;
-	}
-		return ret;
-}
-
-
-
 
 /*
  * Store information about the video data format.  The color matrix
@@ -1860,7 +1831,6 @@ static const struct v4l2_subdev_core_ops ov7670_core_ops = {
 	.reset = ov7670_reset,
 	.init = ov7670_init,
 	.s_power = ov7670_power,
-	.ioctl = sensor_ioctl,
 #ifdef CONFIG_VIDEO_ADV_DEBUG
 	.g_register = ov7670_g_register,
 	.s_register = ov7670_s_register,
@@ -1903,7 +1873,7 @@ static int ov7670_probe(struct i2c_client *client,
 	v4l2_i2c_subdev_init(sd, client, &ov7670_ops);
 
 	info->fmt = &ov7670_formats[0];
-	info->ccm_info = &ccm_info_con;
+
 	info->sat = 128;	/* Review this */
 	info->clkrc = 1;	/* 30fps */
 

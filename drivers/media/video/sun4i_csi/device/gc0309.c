@@ -99,15 +99,10 @@ MODULE_PARM_DESC(debug, "Debug level (0-1)");
  * Information we maintain about a known sensor.
  */
 struct sensor_format_struct;  /* coming later */
-static __csi_subdev_info_t ccm_info_con =
-{
-	.mclk 	= MCLK,
-};
 
 struct sensor_info {
 	struct v4l2_subdev sd;
 	struct sensor_format_struct *fmt;  /* Current format */
-	__csi_subdev_info_t *ccm_info;
 	int	width;
 	int	height;
 	int brightness;
@@ -1234,32 +1229,6 @@ static int sensor_init(struct v4l2_subdev *sd, u32 val)
 
 	return sensor_init_hvflip(sd);
 }
-
-static long sensor_ioctl(struct v4l2_subdev *sd, unsigned int cmd, void *arg)
-{
-	int ret=0;
-
-	switch(cmd){
-		case CSI_SUBDEV_CMD_GET_INFO:
-		{
-			struct sensor_info *info = to_state(sd);
-			__csi_subdev_info_t *ccm_info = arg;
-
-			csi_dev_dbg("CSI_SUBDEV_CMD_GET_INFO\n");
-
-			ccm_info->mclk 	=	info->ccm_info->mclk ;
-
-			csi_dev_dbg("ccm_info.mclk=%x\n ",info->ccm_info->mclk);
-
-			break;
-		}
-		default:
-			return -EINVAL;
-	}
-
-	return ret;
-}
-
 
 /*
  * Store information about the video data format.
@@ -2408,7 +2377,6 @@ static const struct v4l2_subdev_core_ops sensor_core_ops = {
 	.reset = sensor_reset,
 	.init = sensor_init,
 	.s_power = sensor_power,
-	.ioctl = sensor_ioctl,
 };
 
 static const struct v4l2_subdev_video_ops sensor_video_ops = {
@@ -2447,7 +2415,6 @@ static int sensor_probe(struct i2c_client *client,
 	v4l2_i2c_subdev_init(sd, client, &sensor_ops);
 
 	info->fmt = &sensor_formats[0];
-	info->ccm_info = &ccm_info_con;
 
 	info->brightness = 0;
 	info->contrast = 0;

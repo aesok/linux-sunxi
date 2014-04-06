@@ -267,14 +267,6 @@ struct csi_sensor_platform_data {
 	int inv_hflip;
 };
 
-/*
- * csi sub device info
- */
-typedef struct tag_CSI_SUBDEV_INFO
-{
-	int			mclk;		/* the mclk frequency for sensor module in HZ unit */
-}__csi_subdev_info_t;
-
 struct csi_buf_addr {
 	dma_addr_t	y;
 	dma_addr_t	cb;
