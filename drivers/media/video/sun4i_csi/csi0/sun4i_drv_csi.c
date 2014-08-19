@@ -1794,19 +1794,29 @@ static int csi_probe(struct platform_device *pdev)
 		return ret;
 	}
 
+	sensor_pdata = dev_sensor[0].platform_data;
+	dev->mclk = sensor_pdata->mclk;
+
+	/*clock resource*/
+	if (csi_clk_get(dev)) {
+		csi_err("csi clock get failed!\n");
+		ret = -ENXIO;
+		goto err_irq;
+	}
+
     /*pin resource*/
 	dev->csi_pin_hd = gpio_request_ex("csi0_para",NULL);
 	if (dev->csi_pin_hd==-1) {
 		csi_err("csi0 pin request error!\n");
 		ret = -ENXIO;
-		goto err_irq;
+		goto err_clk;
 	}
 
     /* v4l2 device register */
 	ret = v4l2_device_register(&pdev->dev, &dev->v4l2_dev);
 	if (ret) {
 		csi_err("Error registering v4l2 device\n");
-		goto err_irq;
+		goto err_clk;
 
 	}
 
@@ -1825,7 +1835,7 @@ static int csi_probe(struct platform_device *pdev)
 		if (i2c_adap == NULL) {
 			csi_err("request i2c adapter failed,input_num = %d\n",input_num);
 			ret = -EINVAL;
-			goto free_dev;//linux-3.0
+			goto unreg_dev;
 		}
 
 		dev->ccm_cfg[input_num].sd = v4l2_i2c_new_subdev_board(&dev->v4l2_dev,
@@ -1835,7 +1845,7 @@ static int csi_probe(struct platform_device *pdev)
 											NULL);
 		if (!dev->ccm_cfg[input_num].sd) {
 			csi_err("Error registering v4l2 subdevice,input_num = %d\n",input_num);
-			goto free_dev;
+			goto unreg_dev;
 		} else{
 			csi_print("registered sub device,input_num = %d\n",input_num);
 		}
@@ -1860,18 +1870,11 @@ static int csi_probe(struct platform_device *pdev)
 
 	update_ccm_info(dev, &dev->ccm_cfg[0]);
 
-	/*clock resource*/
-	if (csi_clk_get(dev)) {
-		csi_err("csi clock get failed!\n");
-		ret = -ENXIO;
-		goto unreg_dev;
-	}
-
 	/*video device register	*/
 	ret = -ENOMEM;
 	vfd = video_device_alloc();
 	if (!vfd) {
-		goto err_clk;
+		goto unreg_dev;
 	}
 
 	*vfd = csi_template;
@@ -1909,11 +1912,10 @@ static int csi_probe(struct platform_device *pdev)
 
 rel_vdev:
 	video_device_release(vfd);
-err_clk:
-	csi_clk_release(dev);
 unreg_dev:
 	v4l2_device_unregister(&dev->v4l2_dev);
-free_dev:
+err_clk:
+	csi_clk_release(dev);
 err_irq:
 
 	return ret;
