@@ -1146,111 +1146,32 @@ static int vidioc_streamoff(struct file *file, void *priv, enum v4l2_buf_type i)
 	return 0;
 }
 
-
-static int vidioc_enum_input(struct file *file, void *priv,
+static int sun4i_csi_enum_input(struct file *file, void *priv,
 				struct v4l2_input *inp)
 {
-	struct csi_dev *dev = video_drvdata(file);
-
-	if (inp->index > dev->dev_qty-1) {
-		csi_err("input index invalid!\n");
+	if (inp->index != 0)
 		return -EINVAL;
-	}
 
 	inp->type = V4L2_INPUT_TYPE_CAMERA;
+	strncpy(inp->name, "Camera", sizeof(inp->name) - 1);
 
 	return 0;
 }
 
-static int vidioc_g_input(struct file *file, void *priv, unsigned int *i)
+static int sun4i_csi_g_input(struct file *file, void *priv, unsigned int *i)
 {
-	struct csi_dev *dev = video_drvdata(file);
+	*i = 0;
 
-	*i = dev->input;
 	return 0;
 }
 
-static int internal_s_input(struct csi_dev *dev, unsigned int i)
+static int sun4i_csi_s_input(struct file *file, void *priv, unsigned int i)
 {
-	int ret;
-
-	if (i > dev->dev_qty-1) {
-		csi_err("set input error!\n");
+	if (i != 0)
 		return -EINVAL;
-	}
 
-	if (i == dev->input)
-		return 0;
-
-	csi_dbg(0,"input_num = %d\n",i);
-
-//	spin_lock(&dev->slock);
-
-	/*Power down current device*/
-	ret = v4l2_subdev_call(dev->sd,core, s_power, CSI_SUBDEV_STBY_ON);
-	if(ret < 0)
-		goto altend;
-
-	/* Alternate the device info and select target device*/
-	update_ccm_info(dev, &dev->ccm_cfg[i]);
-
-	/* change the csi setting */
-	v4l2_dbg(1, debug, &dev->v4l2_dev, "dev->mclk = %d\n", dev->mclk);
-
-//  bsp_csi_configure(dev,&dev->csi_mode);
-	csi_clk_out_set(dev);
-
-	/* Initial target device */
-	ret = v4l2_subdev_call(dev->sd,core, s_power, CSI_SUBDEV_STBY_OFF);
-	if (ret!=0) {
-	  csi_err("sensor standby off error when selecting target device!\n");
-	  goto recover;
-	}
-
-	ret = v4l2_subdev_call(dev->sd,core, init, 0);
-	if (ret!=0) {
-		csi_err("sensor initial error when selecting target device!\n");
-		goto recover;
-	}
-
-	dev->input = i;
-  ret = 0;
-
-altend:
-//  spin_unlock(&dev->slock);
-	return ret;
-
-recover:
-	/*Power down target device*/
-	ret = v4l2_subdev_call(dev->sd,core, s_power, CSI_SUBDEV_STBY_ON);
-	if(ret < 0)
-		goto altend;
-
-	/* Alternate the device info and select the current device*/
-	update_ccm_info(dev, &dev->ccm_cfg[dev->input]);
-
-	/*Re Initial current device*/
-	ret = v4l2_subdev_call(dev->sd,core, s_power, CSI_SUBDEV_STBY_OFF);
-	if (ret!=0) {
-	  csi_err("sensor standby off error when selecting back current device!\n");
-	  goto recover;
-	}
-
-	ret = v4l2_subdev_call(dev->sd,core, init, 0);
-	if (ret!=0) {
-		csi_err("sensor recovering error when selecting back current device!\n");
-	}
-	ret = 0;
-	goto altend;
+	return 0;
 }
-
-static int vidioc_s_input(struct file *file, void *priv, unsigned int i)
-{
-	struct csi_dev *dev = video_drvdata(file);
-
-	return internal_s_input(dev , i);
-}
-
 
 static int vidioc_queryctrl(struct file *file, void *priv,
 			    struct v4l2_queryctrl *qc)
@@ -1391,8 +1312,6 @@ static int csi_open(struct file *file)
 	  }
 	}
 
-	dev->input=0;//default input
-
 	bsp_csi_open(dev);
 	bsp_csi_set_offset(dev,0,0);//h and v offset is initialed to zero
 
@@ -1493,9 +1412,9 @@ static const struct v4l2_ioctl_ops csi_ioctl_ops = {
 	.vidioc_querybuf          = vidioc_querybuf,
 	.vidioc_qbuf              = vidioc_qbuf,
 	.vidioc_dqbuf             = vidioc_dqbuf,
-	.vidioc_enum_input        = vidioc_enum_input,
-	.vidioc_g_input           = vidioc_g_input,
-	.vidioc_s_input           = vidioc_s_input,
+	.vidioc_enum_input        = sun4i_csi_enum_input,
+	.vidioc_g_input           = sun4i_csi_g_input,
+	.vidioc_s_input           = sun4i_csi_s_input,
 	.vidioc_streamon          = vidioc_streamon,
 	.vidioc_streamoff         = vidioc_streamoff,
 	.vidioc_queryctrl         = vidioc_queryctrl,

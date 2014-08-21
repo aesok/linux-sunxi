@@ -326,9 +326,6 @@ struct csi_dev {
 	unsigned 		   		ms;
 	unsigned long           jiffies;
 
-	/* Input Number */
-	int			   			input;
-
 	/* video capture */
 	struct csi_fmt          *fmt;
 	unsigned int            width;
