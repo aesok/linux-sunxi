@@ -1681,7 +1681,6 @@ static int csi_probe(struct platform_device *pdev)
 	struct video_device *vfd;
 	struct i2c_adapter *i2c_adap;
 	int ret = 0;
-	int input_num;
 
 	csi_dbg(0,"csi_probe\n");
 
@@ -1741,50 +1740,39 @@ static int csi_probe(struct platform_device *pdev)
 
 	dev_set_drvdata(&(pdev)->dev, (dev));
 
-	dev->dev_qty = csi_pdata->dev_qty;
+	dev->dev_qty = 0;
 	dev->stby_mode = csi_pdata->stby_mode;
 
-  /* v4l2 subdev register	*/
-	for(input_num=0; input_num<dev->dev_qty; input_num++)
-	{
-		sensor_pdata = dev_sensor[input_num].platform_data;
+	/* v4l2 subdev register	*/
+	sensor_pdata = dev_sensor[0].platform_data;
 
-		i2c_adap = i2c_get_adapter(csi_pdata->i2c_adapter_id[input_num]);
+	i2c_adap = i2c_get_adapter(csi_pdata->i2c_adapter_id[0]);
 
-		if (i2c_adap == NULL) {
-			csi_err("request i2c adapter failed,input_num = %d\n",input_num);
-			ret = -EINVAL;
-			goto unreg_dev;
-		}
-
-		dev->ccm_cfg[input_num].sd = v4l2_i2c_new_subdev_board(&dev->v4l2_dev,
-											i2c_adap,
-											//dev_sensor[input_num].type,//linux-3.0
-											&dev_sensor[input_num],
-											NULL);
-		if (!dev->ccm_cfg[input_num].sd) {
-			csi_err("Error registering v4l2 subdevice,input_num = %d\n",input_num);
-			goto unreg_dev;
-		} else{
-			csi_print("registered sub device,input_num = %d\n",input_num);
-		}
-
-		dev->ccm_cfg[input_num].mclk =  sensor_pdata->mclk;
-
-		/*power issue*/
-
-		if(dev->stby_mode == 1) {
-			csi_print("power on and power off camera!\n");
-			update_ccm_info(dev, &dev->ccm_cfg[input_num]);
-			v4l2_subdev_call(dev->ccm_cfg[input_num].sd,core, s_power, CSI_SUBDEV_PWR_ON);
-			v4l2_subdev_call(dev->ccm_cfg[input_num].sd,core, s_power, CSI_SUBDEV_PWR_OFF);
-		}
+	if (i2c_adap == NULL) {
+		dev_err(&pdev->dev, "Cannot get I2C adapter #%d.\n", csi_pdata->i2c_adapter_id[0]);
+		ret = -EINVAL;
+		goto unreg_dev;
 	}
 
-	for(input_num=0; input_num<dev->dev_qty; input_num++)
-	{
-		v4l2_dbg(1, debug, &dev->v4l2_dev, "dev->ccm_cfg[%d].sd = %p\n",input_num,dev->ccm_cfg[input_num].sd);
-		v4l2_dbg(1, debug, &dev->v4l2_dev, "dev->ccm_cfg[%d].mclk = %d\n",input_num,dev->ccm_cfg[input_num].mclk);
+	dev->sd = v4l2_i2c_new_subdev_board(&dev->v4l2_dev, i2c_adap, &dev_sensor[0], NULL);
+	if (!dev->sd) {
+		v4l2_err(&dev->v4l2_dev, "error registering v4l2 subdevice.\n");
+		goto unreg_dev;
+	} else{
+		v4l2_info(&dev->v4l2_dev, "registered sub device, sd = %p\n", dev->sd);
+	}
+
+	// TODO: Remove.
+	dev->ccm_cfg[0].sd = dev->sd;
+	dev->ccm_cfg[0].mclk =  sensor_pdata->mclk;
+
+	/*power issue*/
+
+	if(dev->stby_mode == 1) {
+		csi_print("power on and power off camera!\n");
+		update_ccm_info(dev, &dev->ccm_cfg[0]);
+		v4l2_subdev_call(dev->ccm_cfg[0].sd,core, s_power, CSI_SUBDEV_PWR_ON);
+		v4l2_subdev_call(dev->ccm_cfg[0].sd,core, s_power, CSI_SUBDEV_PWR_OFF);
 	}
 
 	update_ccm_info(dev, &dev->ccm_cfg[0]);
