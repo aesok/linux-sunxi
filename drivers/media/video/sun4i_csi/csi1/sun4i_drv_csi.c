@@ -1283,9 +1283,9 @@ static unsigned int csi_poll(struct file *file, struct poll_table_struct *wait)
 static int csi_open(struct file *file)
 {
 	struct csi_dev *dev = video_drvdata(file);
-	int ret,input_num;
+	int ret;
 
-	csi_dbg(0,"csi_open\n");
+	v4l2_dbg(1, debug, &dev->v4l2_dev, "csi_open\n");
 
 	if (dev->opened == 1) {
 		csi_err("device open busy\n");
@@ -1294,22 +1294,19 @@ static int csi_open(struct file *file)
 
 	csi_clk_enable(dev);
 	csi_reset_disable(dev);
-	//open all the device power and set it to standby on
-	for (input_num=dev->dev_qty-1; input_num>=0; input_num--) {
-		/* update target device info and select it*/
-		update_ccm_info(dev, &dev->ccm_cfg[input_num]);
 
-		csi_clk_out_set(dev);
+	//open the device power and set it to standby on
 
-		ret = v4l2_subdev_call(dev->sd,core, s_power, CSI_SUBDEV_PWR_ON);
-	  if (ret!=0) {
-	  	csi_err("sensor CSI_SUBDEV_PWR_ON error at device number %d when csi open!\n",input_num);
-	  }
+	csi_clk_out_set(dev);
 
-		ret = v4l2_subdev_call(dev->sd,core, s_power, CSI_SUBDEV_STBY_ON);
-		if (ret!=0) {
-	  	csi_err("sensor CSI_SUBDEV_STBY_ON error at device number %d when csi open!\n",input_num);
-	  }
+	ret = v4l2_subdev_call(dev->sd,core, s_power, CSI_SUBDEV_PWR_ON);
+	if (ret!=0) {
+		csi_err("sensor CSI_SUBDEV_PWR_ON error when csi open!\n");
+	}
+
+	ret = v4l2_subdev_call(dev->sd,core, s_power, CSI_SUBDEV_STBY_ON);
+	if (ret!=0) {
+		csi_err("sensor CSI_SUBDEV_STBY_ON error when csi open!\n");
 	}
 
 	bsp_csi_open(dev);
@@ -1325,7 +1322,7 @@ static int csi_open(struct file *file)
 		csi_err("sensor initial error when csi open!\n");
 		return ret;
 	} else {
-		csi_print("sensor initial success when csi open!\n");
+		v4l2_dbg(1, debug, &dev->v4l2_dev, "sensor initial success when csi open!\n");
 	}
 
 	dev->opened=1;
@@ -1336,9 +1333,9 @@ static int csi_open(struct file *file)
 static int csi_close(struct file *file)
 {
 	struct csi_dev *dev = video_drvdata(file);
-	int ret,input_num;
+	int ret;
 
-	csi_dbg(0,"csi_close\n");
+	v4l2_dbg(1, debug, &dev->v4l2_dev, "csi_close\n");
 
 	bsp_csi_int_disable(dev,CSI_INT_FRAME_DONE);//CSI_INT_FRAME_DONE
 	//bsp_csi_int_clear_status(dev,CSI_INT_FRAME_DONE);
@@ -1359,16 +1356,11 @@ static int csi_close(struct file *file)
 	if(dev->stby_mode == 0) {
 		return v4l2_subdev_call(dev->sd,core, s_power, CSI_SUBDEV_STBY_ON);
 	} else {
-
-		//close all the device power
-		for (input_num=0; input_num<dev->dev_qty; input_num++) {
-      /* update target device info and select it */
-			update_ccm_info(dev, &dev->ccm_cfg[input_num]);
-			ret = v4l2_subdev_call(dev->sd,core, s_power, CSI_SUBDEV_PWR_OFF);
-		  if (ret!=0) {
-		  	csi_err("sensor power off error at device number %d when csi open!\n",input_num);
+		//close the device power
+		ret = v4l2_subdev_call(dev->sd,core, s_power, CSI_SUBDEV_PWR_OFF);
+		if (ret!=0) {
+			csi_err("sensor power off error when csi Close!\n");
 		  	return ret;
-		  }
 		}
 	}
 
