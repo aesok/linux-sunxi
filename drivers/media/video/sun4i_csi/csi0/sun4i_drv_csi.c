@@ -517,12 +517,6 @@ static void inline csi_stop_generating(struct csi_dev *dev)
 	 return;
 }
 
-static void update_ccm_info(struct csi_dev *dev , struct ccm_config *ccm_cfg)
-{
-   dev->sd = ccm_cfg->sd;
-	dev->mclk = ccm_cfg->mclk;
-}
-
 void static inline bsp_csi_int_clear_status(struct csi_dev *dev,__csi_int_t interrupt)
 {
     W(dev->regs+CSI_REG_INT_STATUS, interrupt);
@@ -1731,7 +1725,6 @@ static int csi_probe(struct platform_device *pdev)
 
 	dev_set_drvdata(&(pdev)->dev, (dev));
 
-	dev->dev_qty = 0;
 	dev->stby_mode = csi_pdata->stby_mode;
 
 	/* v4l2 subdev register	*/
@@ -1753,20 +1746,12 @@ static int csi_probe(struct platform_device *pdev)
 		v4l2_info(&dev->v4l2_dev, "registered sub device, sd = %p\n", dev->sd);
 	}
 
-	// TODO: Remove.
-	dev->ccm_cfg[0].sd = dev->sd;
-	dev->ccm_cfg[0].mclk =  sensor_pdata->mclk;
-
 	/*power issue*/
-
 	if(dev->stby_mode == 1) {
 		csi_print("power on and power off camera!\n");
-		update_ccm_info(dev, &dev->ccm_cfg[0]);
-		v4l2_subdev_call(dev->ccm_cfg[0].sd,core, s_power, CSI_SUBDEV_PWR_ON);
-		v4l2_subdev_call(dev->ccm_cfg[0].sd,core, s_power, CSI_SUBDEV_PWR_OFF);
+		v4l2_subdev_call(dev->sd, core, s_power, CSI_SUBDEV_PWR_ON);
+		v4l2_subdev_call(dev->sd, core, s_power, CSI_SUBDEV_PWR_OFF);
 	}
-
-	update_ccm_info(dev, &dev->ccm_cfg[0]);
 
 	/*video device register	*/
 	ret = -ENOMEM;

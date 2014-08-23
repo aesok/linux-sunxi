@@ -304,11 +304,6 @@ struct csi_dmaqueue {
 
 static LIST_HEAD(csi_devlist);
 
-struct ccm_config {
-	struct v4l2_subdev			*sd;
-	int					mclk;
-};
-
 struct csi_dev {
 	struct list_head       	csi_devlist;
 	struct v4l2_device 	   	v4l2_dev;
@@ -355,10 +350,7 @@ struct csi_dev {
 	__csi_conf_t			csi_mode;
 	struct csi_buf_addr		csi_buf_addr;
 
-	/* ccm config */
-  int dev_qty;
 	int				mclk;
-	struct ccm_config ccm_cfg[MAX_NUM_INPUTS];
 };
 
 struct csi_platform_data {
