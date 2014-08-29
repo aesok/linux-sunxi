@@ -1281,110 +1281,154 @@ static void sensor_gpio_set_status(int hd, user_gpio_set_t *gpio, int status)
  * Stuff that knows about the sensor.
  */
 
+static int gt2005_power_on(struct sensor_info *info)
+{
+	struct csi_dev *dev=(struct csi_dev *)dev_get_drvdata(info->sd.v4l2_dev->dev);
+
+	csi_dev_dbg("power on\n");
+
+	v4l2_dbg(1, debug, &info->sd, "power on\n");
+
+	//inactive mclk before power on
+	clk_disable(dev->csi_module_clk);
+	//power on reset
+	sensor_gpio_set_status(dev->csi_pin_hd, info->stby, 1);//set the gpio to output
+	sensor_gpio_set_status(dev->csi_pin_hd, info->reset, 1);//set the gpio to output
+	sensor_gpio_write(dev->csi_pin_hd, info->stby, CSI_STBY_ON);
+	sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_ON);
+	msleep(1);
+	//power supply
+	sensor_gpio_write(dev->csi_pin_hd, info->power, CSI_PWR_ON);
+	msleep(10);
+	if (info->dvdd) {
+		regulator_enable(info->dvdd);
+		msleep(10);
+	}
+	if (info->avdd) {
+		regulator_enable(info->avdd);
+		msleep(10);
+	}
+	if (info->iovdd) {
+		regulator_enable(info->iovdd);
+		msleep(10);
+	}
+	//active mclk before power on
+	clk_enable(dev->csi_module_clk);
+	//reset after power on
+	sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_OFF);
+	msleep(10);
+	sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_ON);
+	msleep(100);
+	sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_OFF);
+	msleep(100);
+	sensor_gpio_write(dev->csi_pin_hd, info->stby, CSI_STBY_OFF);
+	msleep(10);
+
+	return 0;
+}
+
+static int gt2005_power_off(struct sensor_info *info)
+{
+	struct csi_dev *dev=(struct csi_dev *)dev_get_drvdata(info->sd.v4l2_dev->dev);
+
+	v4l2_dbg(1, debug, &info->sd, "power off\n");
+
+	//power supply off
+	if (info->iovdd) {
+		regulator_disable(info->iovdd);
+		msleep(10);
+	}
+	if (info->avdd) {
+		regulator_disable(info->avdd);
+		msleep(10);
+	}
+	if (info->dvdd) {
+		regulator_disable(info->dvdd);
+		msleep(10);
+	}
+	sensor_gpio_write(dev->csi_pin_hd, info->power, CSI_PWR_OFF);
+	msleep(10);
+
+	//inactive mclk after power off
+	clk_disable(dev->csi_module_clk);
+
+	//set the io to hi-z
+	sensor_gpio_set_status(dev->csi_pin_hd, info->reset, 0);//set the gpio to input
+	sensor_gpio_set_status(dev->csi_pin_hd, info->stby, 0);//set the gpio to input
+
+	return 0;
+}
+
+static int gt2005_stby_on(struct sensor_info *info)
+{
+	struct csi_dev *dev=(struct csi_dev *)dev_get_drvdata(info->sd.v4l2_dev->dev);
+
+	v4l2_dbg(1, debug, &info->sd, "stby on\n");
+
+	//reset off io
+	sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_OFF);
+	msleep(10);
+	//active mclk before stadby in
+	clk_enable(dev->csi_module_clk);
+	msleep(100);
+	//standby on io
+	sensor_gpio_write(dev->csi_pin_hd, info->stby, CSI_STBY_ON);
+	msleep(100);
+	sensor_gpio_write(dev->csi_pin_hd, info->stby, CSI_STBY_OFF);
+	msleep(100);
+	sensor_gpio_write(dev->csi_pin_hd, info->stby, CSI_STBY_ON);
+	msleep(100);
+	//inactive mclk after stadby in
+	clk_disable(dev->csi_module_clk);
+
+	sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_ON);
+	msleep(10);
+
+	return 0;
+}
+
+static int gt2005_stby_off(struct sensor_info *info)
+{
+	struct csi_dev *dev=(struct csi_dev *)dev_get_drvdata(info->sd.v4l2_dev->dev);
+
+	v4l2_dbg(1, debug, &info->sd, "stby off\n");
+
+	//active mclk before stadby out
+	clk_enable(dev->csi_module_clk);
+	msleep(10);
+	//reset off io
+	sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_OFF);
+	msleep(10);
+	sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_ON);
+	msleep(100);
+	sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_OFF);
+	sensor_gpio_write(dev->csi_pin_hd, info->stby, CSI_STBY_OFF);
+	msleep(10);
+
+	return 0;
+}
+
 static int sensor_power(struct v4l2_subdev *sd, int on)
 {
-	struct csi_dev *dev=(struct csi_dev *)dev_get_drvdata(sd->v4l2_dev->dev);
 	struct sensor_info *info = to_state(sd);
 
-  switch(on)
+	switch(on)
 	{
 		case CSI_SUBDEV_STBY_ON:
-			csi_dev_dbg("CSI_SUBDEV_STBY_ON\n");
-			//reset off io
-			sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_OFF);
-			msleep(10);
-			//active mclk before stadby in
-			clk_enable(dev->csi_module_clk);
-			msleep(100);
-			//standby on io
-			sensor_gpio_write(dev->csi_pin_hd, info->stby, CSI_STBY_ON);
-			msleep(100);
-			sensor_gpio_write(dev->csi_pin_hd, info->stby, CSI_STBY_OFF);
-			msleep(100);
-			sensor_gpio_write(dev->csi_pin_hd, info->stby, CSI_STBY_ON);
-			msleep(100);
-			//inactive mclk after stadby in
-			clk_disable(dev->csi_module_clk);
+			gt2005_stby_on(info);
 
-			sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_ON);
-			msleep(10);
 			break;
 		case CSI_SUBDEV_STBY_OFF:
-			csi_dev_dbg("CSI_SUBDEV_STBY_OFF\n");
-			//active mclk before stadby out
-			clk_enable(dev->csi_module_clk);
-			msleep(10);
-			//reset off io
-			sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_OFF);
-			msleep(10);
-			sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_ON);
-			msleep(100);
-			sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_OFF);
-			sensor_gpio_write(dev->csi_pin_hd, info->stby, CSI_STBY_OFF);
-			msleep(10);
+			gt2005_stby_off(info);
+
 			break;
 		case CSI_SUBDEV_PWR_ON:
-			csi_dev_dbg("CSI_SUBDEV_PWR_ON\n");
-			//inactive mclk before power on
-			clk_disable(dev->csi_module_clk);
-			//power on reset
-			sensor_gpio_set_status(dev->csi_pin_hd, info->stby, 1);//set the gpio to output
-			sensor_gpio_set_status(dev->csi_pin_hd, info->reset, 1);//set the gpio to output
-			sensor_gpio_write(dev->csi_pin_hd, info->stby, CSI_STBY_ON);
-			sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_ON);
-			msleep(1);
-			//power supply
-			sensor_gpio_write(dev->csi_pin_hd, info->power, CSI_PWR_ON);
-			msleep(10);
-			if (info->dvdd) {
-				regulator_enable(info->dvdd);
-				msleep(10);
-			}
-			if (info->avdd) {
-				regulator_enable(info->avdd);
-				msleep(10);
-			}
-			if (info->iovdd) {
-				regulator_enable(info->iovdd);
-				msleep(10);
-			}
-			//active mclk before power on
-			clk_enable(dev->csi_module_clk);
-			//reset after power on
-			sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_OFF);
-			msleep(10);
-			sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_ON);
-			msleep(100);
-			sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_OFF);
-			msleep(100);
-			sensor_gpio_write(dev->csi_pin_hd, info->stby, CSI_STBY_OFF);
-			msleep(10);
+			gt2005_power_on(info);
+
 			break;
-
 		case CSI_SUBDEV_PWR_OFF:
-			csi_dev_dbg("CSI_SUBDEV_PWR_OFF\n");
-			//power supply off
-			if (info->iovdd) {
-				regulator_disable(info->iovdd);
-				msleep(10);
-			}
-			if (info->avdd) {
-				regulator_disable(info->avdd);
-				msleep(10);
-			}
-			if (info->dvdd) {
-				regulator_disable(info->dvdd);
-				msleep(10);
-			}
-			sensor_gpio_write(dev->csi_pin_hd, info->power, CSI_PWR_OFF);
-			msleep(10);
+			gt2005_power_off(info);
 
-			//inactive mclk after power off
-			clk_disable(dev->csi_module_clk);
-
-			//set the io to hi-z
-			sensor_gpio_set_status(dev->csi_pin_hd, info->reset, 0);//set the gpio to input
-			sensor_gpio_set_status(dev->csi_pin_hd, info->stby, 0);//set the gpio to input
 			break;
 		default:
 			return -EINVAL;

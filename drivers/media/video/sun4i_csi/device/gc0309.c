@@ -1010,141 +1010,192 @@ static void sensor_gpio_set_status(int hd, user_gpio_set_t *gpio, int status)
  * Stuff that knows about the sensor.
  */
 
+static int gc0309_power_on(struct sensor_info *info)
+{
+	struct csi_dev *dev=(struct csi_dev *)dev_get_drvdata(info->sd.v4l2_dev->dev);
+	struct i2c_client *client = v4l2_get_subdevdata(&info->sd);
+
+	csi_dev_dbg("power on\n");
+
+	v4l2_dbg(1, debug, &info->sd, "power on\n");
+
+	csi_dev_dbg("CSI_SUBDEV_PWR_ON\n");
+	//make sure that no device can access i2c bus during sensor initial or power down
+	//when using i2c_lock_adpater function, the following codes must not access i2c bus before calling i2c_unlock_adapter
+	i2c_lock_adapter(client->adapter);
+	//power on reset
+	sensor_gpio_set_status(dev->csi_pin_hd, info->stby, 1);//set the gpio to output
+	sensor_gpio_set_status(dev->csi_pin_hd, info->reset, 1);//set the gpio to output
+	sensor_gpio_write(dev->csi_pin_hd, info->stby, CSI_STBY_ON);
+	//reset on io
+	sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_ON);
+	mdelay(1);
+	//active mclk before power on
+	clk_enable(dev->csi_module_clk);
+	mdelay(10);
+	//power supply
+	sensor_gpio_write(dev->csi_pin_hd, info->power, CSI_PWR_ON);
+	mdelay(10);
+	if (info->dvdd) {
+		regulator_enable(info->dvdd);
+		mdelay(10);
+	}
+	if (info->avdd) {
+		regulator_enable(info->avdd);
+		mdelay(10);
+	}
+	if (info->iovdd) {
+		regulator_enable(info->iovdd);
+		mdelay(10);
+	}
+	//standby off io
+	sensor_gpio_write(dev->csi_pin_hd, info->stby, CSI_STBY_OFF);
+	mdelay(10);
+	//reset after power on
+	sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_OFF);
+	mdelay(10);
+	sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_ON);
+	mdelay(100);
+	sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_OFF);
+	mdelay(100);
+	//remember to unlock i2c adapter, so the device can access the i2c bus again
+	i2c_unlock_adapter(client->adapter);
+
+	return 0;
+}
+
+static int gc0309_power_off(struct sensor_info *info)
+{
+	struct csi_dev *dev=(struct csi_dev *)dev_get_drvdata(info->sd.v4l2_dev->dev);
+	struct i2c_client *client = v4l2_get_subdevdata(&info->sd);
+
+	v4l2_dbg(1, debug, &info->sd, "power off\n");
+
+	//make sure that no device can access i2c bus during sensor initial or power down
+	//when using i2c_lock_adpater function, the following codes must not access i2c bus before calling i2c_unlock_adapter
+	i2c_lock_adapter(client->adapter);
+	//standby and reset io
+	sensor_gpio_write(dev->csi_pin_hd, info->stby, CSI_STBY_ON);
+	mdelay(100);
+	sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_ON);
+	mdelay(100);
+	//power supply off
+	if (info->iovdd) {
+		regulator_disable(info->iovdd);
+		mdelay(10);
+	}
+	if (info->avdd) {
+		regulator_disable(info->avdd);
+		mdelay(10);
+	}
+	if (info->dvdd) {
+		regulator_disable(info->dvdd);
+		mdelay(10);
+	}
+	sensor_gpio_write(dev->csi_pin_hd, info->power, CSI_PWR_OFF);
+	mdelay(10);
+	//inactive mclk after power off
+	clk_disable(dev->csi_module_clk);
+	//set the io to hi-z
+	sensor_gpio_set_status(dev->csi_pin_hd, info->reset, 0);//set the gpio to input
+	sensor_gpio_set_status(dev->csi_pin_hd, info->stby, 0);//set the gpio to input
+	//remember to unlock i2c adapter, so the device can access the i2c bus again
+	i2c_unlock_adapter(client->adapter);
+
+	return 0;
+}
+
+static int gc0309_stby_on(struct sensor_info *info)
+{
+	struct csi_dev *dev=(struct csi_dev *)dev_get_drvdata(info->sd.v4l2_dev->dev);
+	struct i2c_client *client = v4l2_get_subdevdata(&info->sd);
+	int ret;
+
+	v4l2_dbg(1, debug, &info->sd, "stby on\n");
+
+	//reset off io
+	sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_OFF);
+	mdelay(10);
+	//disable oe
+	v4l2_dbg(1, debug, &info->sd, "disalbe oe!\n");
+	ret = sensor_write_array(&info->sd,sensor_oe_disable,ARRAY_SIZE(sensor_oe_disable));
+	if(ret < 0)
+		v4l2_err(&info->sd, "sensor_oe_disable error\n");
+	//make sure that no device can access i2c bus during sensor initial or power down
+	//when using i2c_lock_adpater function, the following codes must not access i2c bus before calling i2c_unlock_adapter
+	i2c_lock_adapter(client->adapter);
+	//standby on io
+	sensor_gpio_write(dev->csi_pin_hd, info->stby, CSI_STBY_ON);
+	mdelay(100);
+	sensor_gpio_write(dev->csi_pin_hd, info->stby, CSI_STBY_OFF);
+	mdelay(100);
+	sensor_gpio_write(dev->csi_pin_hd, info->stby, CSI_STBY_ON);
+	mdelay(100);
+	//remember to unlock i2c adapter, so the device can access the i2c bus again
+	i2c_unlock_adapter(client->adapter);
+	//inactive mclk after stadby in
+	clk_disable(dev->csi_module_clk);
+	//reset on io
+	sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_ON);
+	mdelay(10);
+
+	return 0;
+}
+
+static int gc0309_stby_off(struct sensor_info *info)
+{
+	struct csi_dev *dev=(struct csi_dev *)dev_get_drvdata(info->sd.v4l2_dev->dev);
+	struct i2c_client *client = v4l2_get_subdevdata(&info->sd);
+
+	v4l2_dbg(1, debug, &info->sd, "stby off\n");
+
+	//make sure that no device can access i2c bus during sensor initial or power down
+	//when using i2c_lock_adpater function, the following codes must not access i2c bus before calling i2c_unlock_adapter
+	i2c_lock_adapter(client->adapter);
+	//active mclk before stadby out
+	clk_enable(dev->csi_module_clk);
+	mdelay(10);
+	//standby off io
+	sensor_gpio_write(dev->csi_pin_hd, info->stby, CSI_STBY_OFF);
+	mdelay(10);
+	//reset off io
+	sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_OFF);
+	mdelay(10);
+	sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_ON);
+	mdelay(100);
+	sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_OFF);
+	mdelay(100);
+	//remember to unlock i2c adapter, so the device can access the i2c bus again
+	i2c_unlock_adapter(client->adapter);
+
+	return 0;
+}
+
 static int sensor_power(struct v4l2_subdev *sd, int on)
 {
 	struct sensor_info *info = to_state(sd);
-	struct csi_dev *dev=(struct csi_dev *)dev_get_drvdata(sd->v4l2_dev->dev);
-	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	int ret;
 
-  //insure that clk_disable() and clk_enable() are called in pair
-  //when calling CSI_SUBDEV_STBY_ON/OFF and CSI_SUBDEV_PWR_ON/OFF
-  switch(on)
+	//insure that clk_disable() and clk_enable() are called in pair
+	//when calling CSI_SUBDEV_STBY_ON/OFF and CSI_SUBDEV_PWR_ON/OFF
+	switch(on)
 	{
 		case CSI_SUBDEV_STBY_ON:
-			csi_dev_dbg("CSI_SUBDEV_STBY_ON\n");
-			//reset off io
-			sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_OFF);
-			mdelay(10);
-			//disable oe
-			csi_dev_print("disalbe oe!\n");
-			ret = sensor_write_array(sd,sensor_oe_disable,ARRAY_SIZE(sensor_oe_disable));
-			if(ret < 0)
-				csi_dev_err("sensor_oe_disable error\n");
-			//make sure that no device can access i2c bus during sensor initial or power down
-			//when using i2c_lock_adpater function, the following codes must not access i2c bus before calling i2c_unlock_adapter
-			i2c_lock_adapter(client->adapter);
-			//standby on io
-			sensor_gpio_write(dev->csi_pin_hd, info->stby, CSI_STBY_ON);
-			mdelay(100);
-			sensor_gpio_write(dev->csi_pin_hd, info->stby, CSI_STBY_OFF);
-			mdelay(100);
-			sensor_gpio_write(dev->csi_pin_hd, info->stby, CSI_STBY_ON);
-			mdelay(100);
-			//remember to unlock i2c adapter, so the device can access the i2c bus again
-			i2c_unlock_adapter(client->adapter);
-			//inactive mclk after stadby in
-			clk_disable(dev->csi_module_clk);
-			//reset on io
-			sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_ON);
+			gc0309_stby_on(info);
+
 			mdelay(10);
 			break;
 		case CSI_SUBDEV_STBY_OFF:
-			csi_dev_dbg("CSI_SUBDEV_STBY_OFF\n");
-			//make sure that no device can access i2c bus during sensor initial or power down
-			//when using i2c_lock_adpater function, the following codes must not access i2c bus before calling i2c_unlock_adapter
-			i2c_lock_adapter(client->adapter);
-			//active mclk before stadby out
-			clk_enable(dev->csi_module_clk);
-			mdelay(10);
-			//standby off io
-			sensor_gpio_write(dev->csi_pin_hd, info->stby, CSI_STBY_OFF);
-			mdelay(10);
-			//reset off io
-			sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_OFF);
-			mdelay(10);
-			sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_ON);
-			mdelay(100);
-			sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_OFF);
-			mdelay(100);
-			//remember to unlock i2c adapter, so the device can access the i2c bus again
-			i2c_unlock_adapter(client->adapter);
+			gc0309_stby_off(info);
+
 			break;
 		case CSI_SUBDEV_PWR_ON:
-			csi_dev_dbg("CSI_SUBDEV_PWR_ON\n");
-			//make sure that no device can access i2c bus during sensor initial or power down
-			//when using i2c_lock_adpater function, the following codes must not access i2c bus before calling i2c_unlock_adapter
-			i2c_lock_adapter(client->adapter);
-			//power on reset
-			sensor_gpio_set_status(dev->csi_pin_hd, info->stby, 1);//set the gpio to output
-			sensor_gpio_set_status(dev->csi_pin_hd, info->reset, 1);//set the gpio to output
-			sensor_gpio_write(dev->csi_pin_hd, info->stby, CSI_STBY_ON);
-			//reset on io
-			sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_ON);
-			mdelay(1);
-			//active mclk before power on
-			clk_enable(dev->csi_module_clk);
-			mdelay(10);
-			//power supply
-			sensor_gpio_write(dev->csi_pin_hd, info->power, CSI_PWR_ON);
-			mdelay(10);
-			if (info->dvdd) {
-				regulator_enable(info->dvdd);
-				mdelay(10);
-			}
-			if (info->avdd) {
-				regulator_enable(info->avdd);
-				mdelay(10);
-			}
-			if (info->iovdd) {
-				regulator_enable(info->iovdd);
-				mdelay(10);
-			}
-			//standby off io
-			sensor_gpio_write(dev->csi_pin_hd, info->stby, CSI_STBY_OFF);
-			mdelay(10);
-			//reset after power on
-			sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_OFF);
-			mdelay(10);
-			sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_ON);
-			mdelay(100);
-			sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_OFF);
-			mdelay(100);
-			//remember to unlock i2c adapter, so the device can access the i2c bus again
-			i2c_unlock_adapter(client->adapter);
+			gc0309_power_on(info);
+
 			break;
 		case CSI_SUBDEV_PWR_OFF:
 			csi_dev_dbg("CSI_SUBDEV_PWR_OFF\n");
-			//make sure that no device can access i2c bus during sensor initial or power down
-			//when using i2c_lock_adpater function, the following codes must not access i2c bus before calling i2c_unlock_adapter
-			i2c_lock_adapter(client->adapter);
-			//standby and reset io
-			sensor_gpio_write(dev->csi_pin_hd, info->stby, CSI_STBY_ON);
-			mdelay(100);
-			sensor_gpio_write(dev->csi_pin_hd, info->reset, CSI_RST_ON);
-			mdelay(100);
-			//power supply off
-			if (info->iovdd) {
-				regulator_disable(info->iovdd);
-				mdelay(10);
-			}
-			if (info->avdd) {
-				regulator_disable(info->avdd);
-				mdelay(10);
-			}
-			if (info->dvdd) {
-				regulator_disable(info->dvdd);
-				mdelay(10);
-			}
-			sensor_gpio_write(dev->csi_pin_hd, info->power, CSI_PWR_OFF);
-			mdelay(10);
-			//inactive mclk after power off
-			clk_disable(dev->csi_module_clk);
-			//set the io to hi-z
-			sensor_gpio_set_status(dev->csi_pin_hd, info->reset, 0);//set the gpio to input
-			sensor_gpio_set_status(dev->csi_pin_hd, info->stby, 0);//set the gpio to input
-			//remember to unlock i2c adapter, so the device can access the i2c bus again
-			i2c_unlock_adapter(client->adapter);
+			gc0309_power_off(info);
+
 			break;
 		default:
 			return -EINVAL;
