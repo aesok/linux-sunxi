@@ -1867,6 +1867,26 @@ static int ov7670_s_register(struct v4l2_subdev *sd, struct v4l2_dbg_register *r
 }
 #endif
 
+static int ov7670_registered(struct v4l2_subdev *sd)
+{
+	struct ov7670_info *info = to_state(sd);
+	int ret;
+
+	v4l2_dbg(1, debug, sd, "ov7670_registered.\n");
+
+	ov7670_power_on(info);
+	ret = ov7670_detect(&info->sd);
+	ov7670_power_off(info);
+
+	if (ret) {
+		v4l2_err(sd, "chip found is not an ov7670 chip.\n");
+	} else {
+		v4l2_info(sd, "the ov7670 chip is found.\n");
+	}
+
+	return 0;
+}
+
 /* ----------------------------------------------------------------------- */
 
 static const struct v4l2_subdev_core_ops ov7670_core_ops = {
@@ -1897,6 +1917,10 @@ static const struct v4l2_subdev_ops ov7670_ops = {
 	.video = &ov7670_video_ops,
 };
 
+static const struct v4l2_subdev_internal_ops ov7670_internal_ops = {
+	.registered = ov7670_registered,
+};
+
 /* ----------------------------------------------------------------------- */
 
 static int ov7670_probe(struct i2c_client *client,
@@ -1917,6 +1941,8 @@ static int ov7670_probe(struct i2c_client *client,
 		return -ENOMEM;
 	sd = &info->sd;
 	v4l2_i2c_subdev_init(sd, client, &ov7670_ops);
+
+	sd->internal_ops = &ov7670_internal_ops;
 
 	info->fmt = &ov7670_formats[0];
 

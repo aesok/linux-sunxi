@@ -2501,6 +2501,26 @@ static int sensor_g_chip_ident(struct v4l2_subdev *sd,
 	return v4l2_chip_ident_i2c_client(client, chip, V4L2_IDENT_SENSOR, 0);
 }
 
+static int mt9d112_registered(struct v4l2_subdev *sd)
+{
+	struct sensor_info *info = to_state(sd);
+	int ret;
+
+	v4l2_dbg(1, debug, sd, "mt9d112_registered.\n");
+
+	mt9d112_power_on(info);
+	ret = sensor_detect(&info->sd);
+	mt9d112_power_off(info);
+
+	if (ret) {
+		v4l2_err(sd, "chip found is not an mt9d112 chip.\n");
+	} else {
+		v4l2_info(sd, "the mt9d112 chip is found.\n");
+	}
+
+	return 0;
+}
+
 
 /* ----------------------------------------------------------------------- */
 
@@ -2528,6 +2548,10 @@ static const struct v4l2_subdev_ops sensor_ops = {
 	.video = &sensor_video_ops,
 };
 
+static const struct v4l2_subdev_internal_ops mt9d112_internal_ops = {
+	.registered = mt9d112_registered,
+};
+
 /* ----------------------------------------------------------------------- */
 
 static int sensor_probe(struct i2c_client *client,
@@ -2548,6 +2572,8 @@ static int sensor_probe(struct i2c_client *client,
 		return -ENOMEM;
 	sd = &info->sd;
 	v4l2_i2c_subdev_init(sd, client, &sensor_ops);
+
+	sd->internal_ops = &mt9d112_internal_ops;
 
 	info->fmt = &sensor_formats[0];
 
