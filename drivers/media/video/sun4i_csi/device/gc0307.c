@@ -1405,12 +1405,6 @@ static int sensor_init(struct v4l2_subdev *sd, u32 val)
 	csi_dev_dbg("sensor_init\n");
 	writel(0x0055555d,0xf1c208a4);//debug
 
-	/*Make sure it is a target sensor*/
-	ret = sensor_detect(sd);
-	if (ret) {
-		csi_dev_err("chip found is not an target chip.\n");
-		return ret;
-	}
 	ret = sensor_write_array(sd, sensor_default_regs , ARRAY_SIZE(sensor_default_regs));
 	if(ret != 0)
 		return ret;

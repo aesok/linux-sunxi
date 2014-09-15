@@ -847,9 +847,6 @@ static int ov7670_detect(struct v4l2_subdev *sd)
 	unsigned char v;
 	int ret;
 
-//	ret = ov7670_init(sd, 0);
-//	if (ret < 0)
-//		return ret;
 	ret = ov7670_read(sd, REG_MIDH, &v);
 	if (ret < 0)
 		return ret;
@@ -881,12 +878,6 @@ static int ov7670_init(struct v4l2_subdev *sd, u32 val)
 	int ret;
 	csi_dev_dbg("ov7670_init\n");
 
-	/* Make sure it's an ov7670 */
-	ret = ov7670_detect(sd);
-	if (ret) {
-		csi_err("chip found is not an ov7670 chip.\n");
-		return ret;
-	}
 	ret = ov7670_write_array(sd, ov7670_default_regs);
 	if(ret != 0)
 		return ret;

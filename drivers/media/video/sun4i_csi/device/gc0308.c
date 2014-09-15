@@ -1185,12 +1185,6 @@ static int sensor_init(struct v4l2_subdev *sd, u32 val)
 {
 	int ret;
 	csi_dev_dbg("sensor_init\n");
-	/*Make sure it is a target sensor*/
-	ret = sensor_detect(sd);
-	if (ret) {
-		csi_dev_err("chip found is not an target chip.\n");
-		return ret;
-	}
 
 	switch(magic_ver) {
 	case SUNXI_VER_A10A:
