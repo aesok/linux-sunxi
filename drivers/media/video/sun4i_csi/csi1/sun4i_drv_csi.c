@@ -1746,13 +1746,6 @@ static int csi_probe(struct platform_device *pdev)
 		v4l2_info(&dev->v4l2_dev, "registered sub device, sd = %p\n", dev->sd);
 	}
 
-	/*power issue*/
-	if(dev->stby_mode == 1) {
-		csi_print("power on and power off camera!\n");
-		v4l2_subdev_call(dev->sd, core, s_power, CSI_SUBDEV_PWR_ON);
-		v4l2_subdev_call(dev->sd, core, s_power, CSI_SUBDEV_PWR_OFF);
-	}
-
 	/*video device register	*/
 	ret = -ENOMEM;
 	vfd = video_device_alloc();
