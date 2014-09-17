@@ -654,8 +654,6 @@ static int ov7670_power_on(struct ov7670_info *info)
 {
 	struct csi_dev *dev=(struct csi_dev *)dev_get_drvdata(info->sd.v4l2_dev->dev);
 
-	csi_dev_dbg("power on\n");
-
 	v4l2_dbg(1, debug, &info->sd, "power on\n");
 
 	//inactive mclk before power on

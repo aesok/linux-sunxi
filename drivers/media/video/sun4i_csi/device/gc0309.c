@@ -1015,8 +1015,6 @@ static int gc0309_power_on(struct sensor_info *info)
 	struct csi_dev *dev=(struct csi_dev *)dev_get_drvdata(info->sd.v4l2_dev->dev);
 	struct i2c_client *client = v4l2_get_subdevdata(&info->sd);
 
-	csi_dev_dbg("power on\n");
-
 	v4l2_dbg(1, debug, &info->sd, "power on\n");
 
 	csi_dev_dbg("CSI_SUBDEV_PWR_ON\n");
