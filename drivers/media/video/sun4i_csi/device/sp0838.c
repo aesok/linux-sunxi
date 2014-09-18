@@ -1082,6 +1082,7 @@ static int sp0838_stby_off(struct sensor_info *info)
 static int sensor_power(struct v4l2_subdev *sd, int on)
 {
 	struct sensor_info *info = to_state(sd);
+	int ret = 0;
 
 	switch(on)
 	{
@@ -1096,6 +1097,11 @@ static int sensor_power(struct v4l2_subdev *sd, int on)
 		case CSI_SUBDEV_PWR_ON:
 			sp0838_power_on(info);
 
+			ret = sensor_write_array(sd, sensor_default_regs , ARRAY_SIZE(sensor_default_regs));
+
+			if(ret != 0)
+				ret = sensor_init_hvflip(sd);
+
 			break;
 		case CSI_SUBDEV_PWR_OFF:
 			sp0838_power_off(info);
@@ -1106,7 +1112,7 @@ static int sensor_power(struct v4l2_subdev *sd, int on)
 			return -EINVAL;
 	}
 
-	return 0;
+	return ret;
 }
 
 static int sensor_reset(struct v4l2_subdev *sd, u32 val)
@@ -1166,18 +1172,6 @@ static int sensor_detect(struct v4l2_subdev *sd)
 		return -ENODEV;
 
 	return 0;
-}
-
-static int sensor_init(struct v4l2_subdev *sd, u32 val)
-{
-	int ret;
-	csi_dev_dbg("sensor_init\n");
-
-	ret = sensor_write_array(sd, sensor_default_regs , ARRAY_SIZE(sensor_default_regs));
-	if(ret != 0)
-		return ret;
-
-	return sensor_init_hvflip(sd);
 }
 
 
@@ -2388,7 +2382,6 @@ static const struct v4l2_subdev_core_ops sensor_core_ops = {
 	.s_ctrl = sensor_s_ctrl,
 	.queryctrl = sensor_queryctrl,
 	.reset = sensor_reset,
-	.init = sensor_init,
 	.s_power = sensor_power,
 };
 

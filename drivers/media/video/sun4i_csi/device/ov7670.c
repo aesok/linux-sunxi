@@ -778,6 +778,7 @@ static int ov7670_stby_off(struct ov7670_info *info)
 static int ov7670_power(struct v4l2_subdev *sd, int on)
 {
 	struct ov7670_info *info = to_state(sd);
+	int ret = 0;
 
 	switch(on)
 	{
@@ -792,8 +793,12 @@ static int ov7670_power(struct v4l2_subdev *sd, int on)
 		case CSI_SUBDEV_PWR_ON:
 			ov7670_power_on(info);
 
-			break;
+			ret = ov7670_write_array(sd, ov7670_default_regs);
 
+			if(!ret)
+				ret = ov7670_init_hvflip(sd);
+
+			break;
 		case CSI_SUBDEV_PWR_OFF:
 			ov7670_power_off(info);
 
@@ -802,7 +807,7 @@ static int ov7670_power(struct v4l2_subdev *sd, int on)
 			return -EINVAL;
 	}
 
-	return 0;
+	return ret;
 }
 
 static int ov7670_reset(struct v4l2_subdev *sd, u32 val)
@@ -869,18 +874,6 @@ static int ov7670_detect(struct v4l2_subdev *sd)
 	if (v != 0x73)  /* PID + VER = 0x76 / 0x73 */
 		return -ENODEV;
 	return 0;
-}
-
-static int ov7670_init(struct v4l2_subdev *sd, u32 val)
-{
-	int ret;
-	csi_dev_dbg("ov7670_init\n");
-
-	ret = ov7670_write_array(sd, ov7670_default_regs);
-	if(ret != 0)
-		return ret;
-
-	return ov7670_init_hvflip(sd);
 }
 
 /*
@@ -1884,7 +1877,6 @@ static const struct v4l2_subdev_core_ops ov7670_core_ops = {
 	.s_ctrl = ov7670_s_ctrl,
 	.queryctrl = ov7670_queryctrl,
 	.reset = ov7670_reset,
-	.init = ov7670_init,
 	.s_power = ov7670_power,
 #ifdef CONFIG_VIDEO_ADV_DEBUG
 	.g_register = ov7670_g_register,

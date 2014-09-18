@@ -1842,25 +1842,29 @@ static int csi_suspend(struct platform_device *pdev, pm_message_t state)
 	struct csi_dev *dev=(struct csi_dev *)dev_get_drvdata(&(pdev)->dev);
 	int ret;
 
-	csi_print("csi_suspend\n");
+	v4l2_dbg(1, debug, &dev->v4l2_dev, "csi_suspend\n");
 
-	if (dev->opened==1) {
+	if (dev->opened == 1) {
 		csi_clk_disable(dev);
 
 		if(dev->stby_mode == 0) {
-			csi_print("set camera to standby!\n");
-			return v4l2_subdev_call(dev->sd,core, s_power, CSI_SUBDEV_STBY_ON);
+			v4l2_info(&dev->v4l2_dev, "set camera to standby!\n");
+			ret = v4l2_subdev_call(dev->sd, core, s_power, CSI_SUBDEV_STBY_ON);
+			if (ret != 0) {
+				v4l2_err(&dev->v4l2_dev, "sensor standby on error when csi_suspend!\n");
+				return ret;
+			}
 		} else {
-			csi_print("set camera to power off!\n");
+			v4l2_info(&dev->v4l2_dev, "set camera to power off!\n");
 			//close the device power
-
-			ret = v4l2_subdev_call(dev->sd,core, s_power, CSI_SUBDEV_PWR_OFF);
-			if (ret!=0) {
-				csi_err("sensor power off error when csi_suspend!\n");
-			  	return ret;
+			ret = v4l2_subdev_call(dev->sd, core, s_power, CSI_SUBDEV_PWR_OFF);
+			if (ret != 0) {
+				v4l2_err(&dev->v4l2_dev, "sensor power off error when csi_suspend!\n");
+				return ret;
 			}
 		}
 	}
+
 	return 0;
 }
 
@@ -1869,35 +1873,23 @@ static int csi_resume(struct platform_device *pdev)
 	int ret;
 	struct csi_dev *dev=(struct csi_dev *)dev_get_drvdata(&(pdev)->dev);
 
-	csi_print("csi_resume\n");
+	v4l2_dbg(1, debug, &dev->v4l2_dev, "csi_resume\n");
 
-	if (dev->opened==1) {
+	if (dev->opened == 1) {
 		csi_clk_out_set(dev);
 //		csi_clk_enable(dev);
 		if(dev->stby_mode == 0) {
-			ret = v4l2_subdev_call(dev->sd,core, s_power,CSI_SUBDEV_STBY_OFF);
-			if(ret < 0)
+			ret = v4l2_subdev_call(dev->sd, core, s_power,CSI_SUBDEV_STBY_OFF);
+			if(ret != 0) {
+				v4l2_err(&dev->v4l2_dev, "sensor standby off error when csi_resume!\n");
 				return ret;
-			ret = v4l2_subdev_call(dev->sd,core, init, 0);
-			if (ret!=0) {
-				csi_err("sensor initial error when resume from suspend!\n");
-				return ret;
-			} else {
-				csi_print("sensor initial success when resume from suspend!\n");
 			}
 		} else {
 			//open the device power
-			ret = v4l2_subdev_call(dev->sd,core, s_power, CSI_SUBDEV_PWR_ON);
-			if (ret!=0) {
-				csi_err("sensor power on error when csi_resume!\n");
-			}
-
-			ret = v4l2_subdev_call(dev->sd,core, init,0);
-			if (ret!=0) {
-				csi_err("sensor full initial error when resume from suspend!\n");
+			ret = v4l2_subdev_call(dev->sd, core, s_power, CSI_SUBDEV_PWR_ON);
+			if (ret != 0) {
+				v4l2_err(&dev->v4l2_dev, "sensor power on error when csi_resume!\n");
 				return ret;
-			} else {
-				csi_print("sensor full initial success when resume from suspend!\n");
 			}
 		}
 	}
