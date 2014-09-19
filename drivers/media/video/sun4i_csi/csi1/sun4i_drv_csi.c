@@ -88,9 +88,9 @@ static unsigned video_nr = 1;
 static unsigned first_flag = 0;
 
 
-static bool debug;
-module_param(debug, bool, 0644);
-MODULE_PARM_DESC(debug, "Debug level (0-1)");
+static int debug;
+module_param(debug, int, 0644);
+MODULE_PARM_DESC(debug, "Debug level (0-3)");
 
 static char ccm[I2C_NAME_SIZE] = "";
 static uint i2c_addr = 0xff;
