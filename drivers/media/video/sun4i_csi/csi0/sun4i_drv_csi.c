@@ -1167,57 +1167,6 @@ static int sun4i_csi_s_input(struct file *file, void *priv, unsigned int i)
 	return 0;
 }
 
-static int vidioc_queryctrl(struct file *file, void *priv,
-			    struct v4l2_queryctrl *qc)
-{
-	struct csi_dev *dev = video_drvdata(file);
-	int ret;
-
-	ret = v4l2_subdev_call(dev->sd,core,queryctrl,qc);
-	if (ret < 0)
-		csi_err("v4l2 sub device queryctrl error!\n");
-
-	return ret;
-}
-
-static int vidioc_g_ctrl(struct file *file, void *priv,
-			 struct v4l2_control *ctrl)
-{
-	struct csi_dev *dev = video_drvdata(file);
-	int ret;
-
-	ret = v4l2_subdev_call(dev->sd,core,g_ctrl,ctrl);
-	if (ret < 0)
-		csi_err("v4l2 sub device g_ctrl error!\n");
-
-	return ret;
-}
-
-
-static int vidioc_s_ctrl(struct file *file, void *priv,
-				struct v4l2_control *ctrl)
-{
-	struct csi_dev *dev = video_drvdata(file);
-	struct v4l2_queryctrl qc;
-	int ret;
-
-	qc.id = ctrl->id;
-	ret = vidioc_queryctrl(file, priv, &qc);
-	if (ret < 0) {
-		return ret;
-	}
-
-	if (ctrl->value < qc.minimum || ctrl->value > qc.maximum) {
-		return -ERANGE;
-	}
-
-	ret = v4l2_subdev_call(dev->sd,core,s_ctrl,ctrl);
-	if (ret < 0)
-		csi_err("v4l2 sub device s_ctrl error!\n");
-
-	return ret;
-}
-
 static int vidioc_g_parm(struct file *file, void *priv,
 			 struct v4l2_streamparm *parms)
 {
@@ -1402,9 +1351,6 @@ static const struct v4l2_ioctl_ops csi_ioctl_ops = {
 	.vidioc_s_input           = sun4i_csi_s_input,
 	.vidioc_streamon          = vidioc_streamon,
 	.vidioc_streamoff         = vidioc_streamoff,
-	.vidioc_queryctrl         = vidioc_queryctrl,
-	.vidioc_g_ctrl            = vidioc_g_ctrl,
-	.vidioc_s_ctrl            = vidioc_s_ctrl,
 	.vidioc_g_parm		 			  = vidioc_g_parm,
 	.vidioc_s_parm		  			= vidioc_s_parm,
 
@@ -1723,6 +1669,14 @@ static int csi_probe(struct platform_device *pdev)
 
 	}
 
+	dev->v4l2_dev.ctrl_handler = &dev->ctrl_handler;
+	ret = v4l2_ctrl_handler_init(&dev->ctrl_handler, 0);;
+	if (dev->ctrl_handler.error) {
+		v4l2_err(&dev->v4l2_dev, "Unable to init control handler\n");
+		ret = dev->ctrl_handler.error;
+		goto unreg_dev;
+	}
+
 	dev_set_drvdata(&(pdev)->dev, (dev));
 
 	dev->stby_mode = csi_pdata->stby_mode;
@@ -1735,13 +1689,13 @@ static int csi_probe(struct platform_device *pdev)
 	if (i2c_adap == NULL) {
 		dev_err(&pdev->dev, "Cannot get I2C adapter #%d.\n", csi_pdata->i2c_adapter_id[0]);
 		ret = -EINVAL;
-		goto unreg_dev;
+		goto err_free_handler;
 	}
 
 	dev->sd = v4l2_i2c_new_subdev_board(&dev->v4l2_dev, i2c_adap, &dev_sensor[0], NULL);
 	if (!dev->sd) {
 		v4l2_err(&dev->v4l2_dev, "error registering v4l2 subdevice.\n");
-		goto unreg_dev;
+		goto err_free_handler;
 	} else{
 		v4l2_info(&dev->v4l2_dev, "registered sub device, sd = %p\n", dev->sd);
 	}
@@ -1750,7 +1704,7 @@ static int csi_probe(struct platform_device *pdev)
 	ret = -ENOMEM;
 	vfd = video_device_alloc();
 	if (!vfd) {
-		goto unreg_dev;
+		goto err_free_handler;
 	}
 
 	*vfd = csi_template;
@@ -1788,6 +1742,8 @@ static int csi_probe(struct platform_device *pdev)
 
 rel_vdev:
 	video_device_release(vfd);
+err_free_handler:
+	v4l2_ctrl_handler_free(&dev->ctrl_handler);
 unreg_dev:
 	v4l2_device_unregister(&dev->v4l2_dev);
 err_clk:

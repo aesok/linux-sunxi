@@ -30,6 +30,7 @@
 #include <linux/types.h>
 #include <media/videobuf-core.h>
 #include <media/v4l2-device.h>
+#include <media/v4l2-ctrls.h>
 #include <linux/videodev2.h>
 #include <linux/i2c.h>
 #include <media/v4l2-mediabus.h>//linux-3.0
@@ -307,6 +308,7 @@ static LIST_HEAD(csi_devlist);
 struct csi_dev {
 	struct list_head       	csi_devlist;
 	struct v4l2_device 	   	v4l2_dev;
+	struct v4l2_ctrl_handler		ctrl_handler;
 	struct v4l2_subdev			*sd;
 	struct platform_device	*pdev;
 
