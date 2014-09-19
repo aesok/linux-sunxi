@@ -306,7 +306,7 @@ static inline void csi_set_addr(struct csi_dev *dev,struct csi_buffer *buffer)
 	struct csi_buffer *buf = buffer;
 	dma_addr_t addr_org;
 
-	csi_dbg(3,"buf ptr=%p\n",buf);
+	v4l2_dbg(3, debug, &dev->v4l2_dev, "buf ptr=%p\n",buf);
 
 	addr_org = videobuf_to_dma_contig((struct videobuf_buffer *)buf);
 
@@ -361,9 +361,9 @@ static inline void csi_set_addr(struct csi_dev *dev,struct csi_buffer *buffer)
 	bsp_csi_set_buffer_address(dev, CSI_BUF_2_A, dev->csi_buf_addr.cr);
 	bsp_csi_set_buffer_address(dev, CSI_BUF_2_B, dev->csi_buf_addr.cr);
 
-	csi_dbg(3,"csi_buf_addr_y=%x\n",  dev->csi_buf_addr.y);
-	csi_dbg(3,"csi_buf_addr_cb=%x\n", dev->csi_buf_addr.cb);
-	csi_dbg(3,"csi_buf_addr_cr=%x\n", dev->csi_buf_addr.cr);
+	v4l2_dbg(3, debug, &dev->v4l2_dev, "csi_buf_addr_y=%x\n",  dev->csi_buf_addr.y);
+	v4l2_dbg(3, debug, &dev->v4l2_dev, "csi_buf_addr_cb=%x\n", dev->csi_buf_addr.cb);
+	v4l2_dbg(3, debug, &dev->v4l2_dev, "csi_buf_addr_cr=%x\n", dev->csi_buf_addr.cr);
 
 }
 
@@ -529,7 +529,7 @@ static irqreturn_t csi_isr(int irq, void *priv)
 	struct csi_dmaqueue *dma_q = &dev->vidq;
 //	__csi_int_status_t * status;
 
-	csi_dbg(3,"csi_isr\n");
+	v4l2_dbg(3, debug, &dev->v4l2_dev, "csi_isr\n");
 
 	bsp_csi_int_disable(dev,CSI_INT_FRAME_DONE);//CSI_INT_FRAME_DONE
 
@@ -546,7 +546,7 @@ static irqreturn_t csi_isr(int irq, void *priv)
 	}
 
 	buf = list_entry(dma_q->active.next,struct csi_buffer, vb.queue);
-	csi_dbg(3,"buf ptr=%p\n",buf);
+	v4l2_dbg(3, debug, &dev->v4l2_dev, "buf ptr=%p\n", buf);
 
 	/* Nobody is waiting on this buffer*/
 
@@ -698,7 +698,7 @@ static int buffer_prepare(struct videobuf_queue *vq, struct videobuf_buffer *vb,
 	struct csi_buffer *buf = container_of(vb, struct csi_buffer, vb);
 	int rc;
 
-	csi_dbg(1,"buffer_prepare\n");
+	v4l2_dbg(3, debug, &dev->v4l2_dev, "buffer_prepare\n");
 
 	BUG_ON(NULL == dev->fmt);
 
@@ -742,7 +742,7 @@ static void buffer_queue(struct videobuf_queue *vq, struct videobuf_buffer *vb)
 	struct csi_buffer *buf = container_of(vb, struct csi_buffer, vb);
 	struct csi_dmaqueue *vidq = &dev->vidq;
 
-	csi_dbg(1,"buffer_queue\n");
+	v4l2_dbg(3, debug, &dev->v4l2_dev, "buffer_queue\n");
 	buf->vb.state = VIDEOBUF_QUEUED;
 	list_add_tail(&buf->vb.queue, &vidq->active);
 }
