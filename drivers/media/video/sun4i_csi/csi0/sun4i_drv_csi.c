@@ -1260,14 +1260,6 @@ static int csi_open(struct file *file)
 	  return ret;
 	}
 
-	ret = v4l2_subdev_call(dev->sd,core, init, 0);
-	if (ret!=0) {
-		csi_err("sensor initial error when csi open!\n");
-		return ret;
-	} else {
-		v4l2_dbg(1, debug, &dev->v4l2_dev, "sensor initial success when csi open!\n");
-	}
-
 	dev->opened = 1;
 	dev->fmt = &formats[5]; //default format
 	return 0;
